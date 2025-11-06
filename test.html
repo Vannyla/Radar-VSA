@@ -1,0 +1,2029 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radar Cổ Phiếu</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* --- 1. Biến Màu & Cài Đặt Chung --- */
+        :root {
+            /* Dựa trên bảng màu MỚI bạn cung cấp */
+            --color-dark-1: #213a57;
+            --color-dark-2: #0b6477;
+            --color-medium-cyan: #14919b;
+            --color-bright-cyan: #0ad1c8;
+            --color-medium-green: #45dfb1;
+            --color-light-green: #80ed99;
+            --color-white: #ffffff;
+            --color-background: #f8f9fa; /* Nền sáng rõ ràng */
+
+            /* Màu sắc tăng/giảm */
+            --color-green-dark: #006400; /* Xanh lá đậm */
+            --color-red-dark: #A93226;    /* Đỏ đậm */
+            --color-yellow-neutral: #FFC300; /* Vàng */
+
+            /* Màu văn bản */
+            --text-primary: #212529;
+            --text-secondary: #6c757d;
+            --text-light: #f8f9fa;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--color-background);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+
+        /* --- 2. Tiêu Đề (Header) --- */
+        .header {
+            background: linear-gradient(90deg, var(--color-dark-1), var(--color-dark-2));
+            color: var(--color-white);
+            padding: 15px 30px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2em;
+            color: var(--color-bright-cyan);
+        }
+        .sub-header {
+            font-size: 0.9em;
+            color: var(--text-light);
+            opacity: 0.8;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        /* --- 3. Tóm Tắt (Summary) --- */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 20px 30px;
+        }
+        .summary-card {
+            background: var(--color-white);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .summary-card-icon {
+            font-size: 2em;
+        }
+        .summary-card-content h3 {
+            margin: 0;
+            font-size: 1.1em;
+            color: var(--text-secondary);
+        }
+        .summary-card-content p {
+            margin: 0;
+            font-size: 1.5em;
+            font-weight: 700;
+        }
+        #strength-count p { color: var(--color-green-dark); }
+        #weakness-count p { color: var(--color-red-dark); }
+        #observe-count p { color: var(--color-medium-cyan); }
+
+        /* --- 4. Bố Cục Chính (1/3 - 2/3) --- */
+        .main-content {
+            display: flex;
+            height: calc(100vh - 170px);
+            padding: 0 30px 20px 30px;
+            gap: 20px;
+        }
+
+        /* --- 5. Danh Sách Cổ Phiếu (1/3 bên trái) --- */
+        .ticker-list-container {
+            flex: 1; /* Chiếm 1/3 */
+            background: var(--color-white);
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; 
+        }
+        
+        /* Tab điều hướng */
+        .tab-nav {
+            display: flex;
+            border-bottom: 2px solid #eee;
+            flex-shrink: 0; 
+        }
+        .tab-button {
+            flex-grow: 1;
+            padding: 12px 10px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            font-size: 1em;
+            font-weight: 600;
+            color: var(--text-secondary);
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s ease;
+        }
+        .tab-button.active {
+            color: var(--color-medium-cyan);
+            border-bottom-color: var(--color-medium-cyan);
+        }
+        .tab-button[data-tab="strength"].active { color: var(--color-green-dark); border-bottom-color: var(--color-green-dark); }
+        .tab-button[data-tab="weakness"].active { color: var(--color-red-dark); border-bottom-color: var(--color-red-dark); }
+        .tab-button[data-tab="search"].active { color: var(--color-dark-1); border-bottom-color: var(--color-dark-1); } /* Màu mới cho tab Tra Cứu */
+        
+        /* Nội dung tab */
+        .tab-content {
+            display: none;
+            overflow-y: auto; /* THANH CUỘN */
+            height: 100%;
+        }
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Thẻ mini trong danh sách */
+        .ticker-card-mini {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+            transition: background-color 0.2s;
+        }
+        .ticker-card-mini:hover {
+            background-color: #f5f5f5;
+        }
+        .ticker-card-mini.active {
+            background-color: #f0fdf8;
+            border-left: 4px solid var(--color-medium-green);
+            padding-left: 11px;
+        }
+        .ticker-card-mini .info h4 {
+            margin: 0;
+            font-size: 1.2em;
+            color: var(--text-primary);
+        }
+        .ticker-card-mini .info p {
+            margin: 0;
+            font-size: 0.9em;
+            color: var(--text-secondary);
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+        .ticker-card-mini .change {
+            text-align: right;
+            font-weight: 600;
+            font-size: 1.1em;
+            white-space: nowrap;
+        }
+        .change.positive { color: var(--color-green-dark); }
+        .change.negative { color: var(--color-red-dark); }
+        .change.neutral { color: var(--color-yellow-neutral); }
+
+        /* --- 6. Chi Tiết Cổ Phiếu (2/3 bên phải) --- */
+        .ticker-detail-container {
+            flex: 2; /* Chiếm 2/3 */
+            background: var(--color-white);
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            padding: 25px 30px;
+            overflow-y: auto;
+        }
+        /* Trạng thái mặc định (hiện glossary) */
+        #detail-view .default-message {
+            text-align: center;
+            padding: 50px 20px;
+            color: var(--text-secondary);
+        }
+        #detail-view .default-message h2 {
+            font-size: 1.8em;
+            margin-bottom: 20px;
+        }
+        
+        /* Hiển thị chi tiết cổ phiếu */
+        .detail-header h2 {
+            font-size: 2.5em;
+            margin: 0;
+            color: var(--color-dark-1);
+        }
+        .detail-header p {
+            font-size: 1.2em;
+            color: var(--text-secondary);
+            margin: 5px 0 20px 0;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+        }
+        .detail-market {
+            display: flex;
+            gap: 30px;
+            font-size: 1.5em;
+            margin-bottom: 25px;
+        }
+        .detail-market .price { font-weight: 700; }
+        
+        .detail-analysis h3 {
+            font-size: 1.3em;
+            color: var(--text-primary);
+            border-left: 4px solid var(--color-bright-cyan);
+            padding-left: 10px;
+            margin-top: 25px;
+            margin-bottom: 10px;
+        }
+        .detail-analysis p {
+            font-size: 1.1em;
+            margin: 0 0 15px 14px;
+        }
+        .detail-analysis strong {
+            color: var(--color-medium-cyan);
+            font-size: 1.2em;
+        }
+        
+        /* --- 7. CSS cho Tra Cứu Nhanh (MỚI) --- */
+        .quick-search-area {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            flex-shrink: 0;
+        }
+        .search-input {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 1em;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+        .search-input:focus {
+            outline: none;
+            border-color: var(--color-medium-cyan);
+            box-shadow: 0 0 5px rgba(20, 145, 155, 0.3);
+        }
+        /* Style cho kết quả tìm kiếm */
+        .search-result-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .search-result-item:hover {
+            background-color: #f5f5f5;
+        }
+        .search-result-item.active {
+            background-color: #f0fdf8;
+            border-left: 4px solid var(--color-medium-green);
+            padding-left: 11px;
+        }
+        .search-result-item .result-type {
+            font-size: 0.8em;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        .search-result-item .result-type.stock { background-color: #e6fffa; color: #38a169; }
+        .search-result-item .result-type.term { background-color: #ebf8ff; color: #3182ce; }
+        .search-result-item .result-title {
+            font-size: 1.1em;
+            font-weight: 700;
+        }
+        .search-result-item .result-action {
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+        .action-buy { color: var(--color-green-dark); }
+        .action-sell { color: var(--color-red-dark); }
+        .action-hold { color: var(--color-medium-cyan); }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <h1>📈 Radar Cổ Phiếu</h1>
+        <div class="sub-header">
+            <span id="update-date">Ngày cập nhật: 29/10/2025</span>
+            <span id="current-date">Ngày hiện tại: Đang tải...</span>
+            <span>Thực hiện bởi: Hệ Thống Phân Tích VSA</span>
+        </div>
+    </header>
+
+    <div class="summary-grid">
+        <div class="summary-card" id="strength-count">
+            <span class="summary-card-icon">🚀</span>
+            <div class="summary-card-content">
+                <h3>Sức mạnh</h3>
+                <p>0 mã</p>
+            </div>
+        </div>
+        <div class="summary-card" id="weakness-count">
+            <span class="summary-card-icon">📉</span>
+            <div class="summary-card-content">
+                <h3>Suy yếu</h3>
+                <p>0 mã</p>
+            </div>
+        </div>
+        <div class="summary-card" id="observe-count">
+            <span class="summary-card-icon">👁️</span>
+            <div class="summary-card-content">
+                <h3>Quan sát</h3>
+                <p>0 mã</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        
+        <div class="ticker-list-container">
+            <div class="tab-nav">
+                <button class="tab-button active" data-tab="strength">Sức mạnh</button>
+                <button class="tab-button" data-tab="weakness">Suy yếu</button>
+                <button class="tab-button" data-tab="observe">Quan sát</button>
+                <button class="tab-button" data-tab="search"><i class="fas fa-search"></i> Tra Cứu</button> </div>
+
+            <div id="strength-content" class="tab-content active">
+                <div id="strength-list"></div>
+            </div>
+            <div id="weakness-content" class="tab-content">
+                <div id="weakness-list"></div>
+            </div>
+            <div id="observe-content" class="tab-content">
+                <div id="observe-list"></div>
+            </div>
+            
+            <div id="search-content" class="tab-content">
+                <div class="quick-search-area">
+                    <input type="text" id="universal-search" 
+                           placeholder="Nhập Mã CP, Thuật ngữ (SOS), Hành động (Mua/Bán)..." 
+                           class="search-input">
+                </div>
+                <div id="search-results-list" class="results-list">
+                    </div>
+                <div id="no-results-message" class="hidden" style="text-align: center; color: var(--text-secondary); padding: 20px;">
+                    <i class="fas fa-box-open" style="font-size: 2em; margin-bottom: 10px;"></i>
+                    <p>Không tìm thấy kết quả phù hợp.</p>
+                </div>
+            </div>
+            </div>
+
+        <div class="ticker-detail-container">
+            <div id="detail-view">
+                </div>
+        </div>
+    </div>
+
+    <script>        // ##################################################################
+        // BƯỚC 1: DỮ LIỆU ĐẦU VÀO
+        // ##################################################################
+        
+        /**
+         * DỮ LIỆU KẾT QUẢ PHÂN TÍCH (JSON)
+         * * QUAN TRỌNG: Dán kết quả JSON của bạn vào đây.
+         */
+        const analysisData = {
+          "last_updated": "15:00 06/11/2025",
+ 
+  "strength": [
+    {
+      "ticker": "AGG",
+      "name": "CTCP Dau tu va Phat trien Bat dong san An Gia",
+      "sector": "Tai chinh",
+      "exchange": "HSX",
+      "close_price": 16.25,
+      "change": "-0.10 | -0.61%",
+      "change_positive": false,
+      "signal": "Test for Supply",
+      "analysis": "Phiên giao dịch (giảm hoặc đi ngang) có spread hẹp (1.86%) và khối lượng rất thấp (0.4x TB20). Điều này cho thấy nguồn cung giá thấp đã cạn kiệt.",
+      "action": "Tín hiệu Tích cực. Đây là điều kiện tốt để giá tăng. Cân nhắc mua vào nếu giá bùng nổ khỏi nền này với khối lượng lớn.",
+      "counter": "Tuy nhiên, nếu lực cầu không sớm quay lại, giá có thể tiếp tục đi ngang hoặc suy yếu do thiếu sự quan tâm."
+    },
+    {
+      "ticker": "BVS",
+      "name": "CTCP Chung khoan Bao Viet",
+      "sector": "Tai chinh",
+      "exchange": "HNX",
+      "close_price": 34.0,
+      "change": "+0.00 | +0.00%",
+      "change_positive": false,
+      "signal": "Test for Supply",
+      "analysis": "Phiên giao dịch (giảm hoặc đi ngang) có spread hẹp (1.48%) và khối lượng rất thấp (0.4x TB20). Điều này cho thấy nguồn cung giá thấp đã cạn kiệt.",
+      "action": "Tín hiệu Tích cực. Đây là điều kiện tốt để giá tăng. Cân nhắc mua vào nếu giá bùng nổ khỏi nền này với khối lượng lớn.",
+      "counter": "Tuy nhiên, nếu lực cầu không sớm quay lại, giá có thể tiếp tục đi ngang hoặc suy yếu do thiếu sự quan tâm."
+    },
+    {
+      "ticker": "CTI",
+      "name": "CTCP Dau tu Phat trien Cuong Thuan IDICO",
+      "sector": "Cong nghiep",
+      "exchange": "HSX",
+      "close_price": 22.7,
+      "change": "-0.05 | -0.22%",
+      "change_positive": false,
+      "signal": "Test for Supply",
+      "analysis": "Phiên giao dịch (giảm hoặc đi ngang) có spread hẹp (1.33%) và khối lượng rất thấp (0.3x TB20). Điều này cho thấy nguồn cung giá thấp đã cạn kiệt.",
+      "action": "Tín hiệu Tích cực. Đây là điều kiện tốt để giá tăng. Cân nhắc mua vào nếu giá bùng nổ khỏi nền này với khối lượng lớn.",
+      "counter": "Tuy nhiên, nếu lực cầu không sớm quay lại, giá có thể tiếp tục đi ngang hoặc suy yếu do thiếu sự quan tâm."
+    },
+    {
+      "ticker": "DC4",
+      "name": "CTCP Xay Dung DIC Holdings",
+      "sector": "Cong nghiep",
+      "exchange": "HSX",
+      "close_price": 11.6,
+      "change": "+0.00 | +0.00%",
+      "change_positive": false,
+      "signal": "Test for Supply",
+      "analysis": "Phiên giao dịch (giảm hoặc đi ngang) có spread hẹp (0.87%) và khối lượng rất thấp (0.7x TB20). Điều này cho thấy nguồn cung giá thấp đã cạn kiệt.",
+      "action": "Tín hiệu Tích cực. Đây là điều kiện tốt để giá tăng. Cân nhắc mua vào nếu giá bùng nổ khỏi nền này với khối lượng lớn.",
+      "counter": "Tuy nhiên, nếu lực cầu không sớm quay lại, giá có thể tiếp tục đi ngang hoặc suy yếu do thiếu sự quan tâm."
+    },
+    {
+      "ticker": "FCN",
+      "name": "CTCP FECON",
+      "sector": "Cong nghiep",
+      "exchange": "HSX",
+      "close_price": 15.4,
+      "change": "+0.00 | +0.00%",
+      "change_positive": false,
+      "signal": "Test for Supply",
+      "analysis": "Phiên giao dịch (giảm hoặc đi ngang) có spread hẹp (1.96%) và khối lượng rất thấp (0.4x TB20). Điều này cho thấy nguồn cung giá thấp đã cạn kiệt.",
+      "action": "Tín hiệu Tích cực. Đây là điều kiện tốt để giá tăng. Cân nhắc mua vào nếu giá bùng nổ khỏi nền này với khối lượng lớn.",
+      "counter": "Tuy nhiên, nếu lực cầu không sớm quay lại, giá có thể tiếp tục đi ngang hoặc suy yếu do thiếu sự quan tâm."
+    },
+    {
+      "ticker": "HT1",
+      "name": "CTCP Xi Mang Vicem Ha Tien",
+      "sector": "Cong nghiep",
+      "exchange": "HSX",
+      "close_price": 15.95,
+      "change": "-0.25 | -1.54%",
+      "change_positive": false,
+      "signal": "Test for Supply",
+      "analysis": "Phiên giao dịch (giảm hoặc đi ngang) có spread hẹp (1.57%) và khối lượng rất thấp (0.2x TB20). Điều này cho thấy nguồn cung giá thấp đã cạn kiệt.",
+      "action": "Tín hiệu Tích cực. Đây là điều kiện tốt để giá tăng. Cân nhắc mua vào nếu giá bùng nổ khỏi nền này với khối lượng lớn.",
+      "counter": "Tuy nhiên, nếu lực cầu không sớm quay lại, giá có thể tiếp tục đi ngang hoặc suy yếu do thiếu sự quan tâm."
+    },
+    {
+      "ticker": "KSB",
+      "name": "CTCP Khoang san va Xay dung Binh Duong",
+      "sector": "Vat lieu co ban",
+      "exchange": "HSX",
+      "close_price": 18.1,
+      "change": "+0.00 | +0.00%",
+      "change_positive": false,
+      "signal": "Test for Supply",
+      "analysis": "Phiên giao dịch (giảm hoặc đi ngang) có spread hẹp (1.38%) và khối lượng rất thấp (0.4x TB20). Điều này cho thấy nguồn cung giá thấp đã cạn kiệt.",
+      "action": "Tín hiệu Tích cực. Đây là điều kiện tốt để giá tăng. Cân nhắc mua vào nếu giá bùng nổ khỏi nền này với khối lượng lớn.",
+      "counter": "Tuy nhiên, nếu lực cầu không sớm quay lại, giá có thể tiếp tục đi ngang hoặc suy yếu do thiếu sự quan tâm."
+    },
+    {
+      "ticker": "NAG",
+      "name": "CTCP Tap doan Nagakawa",
+      "sector": "Cong nghiep",
+      "exchange": "HNX",
+      "close_price": 9.2,
+      "change": "+0.70 | +8.24%",
+      "change_positive": true,
+      "signal": "Effort to Rise",
+      "analysis": "Phiên tăng điểm với spread rộng (20.78%) và đóng cửa ở mức cao (vị trí 0.94), đi kèm khối lượng lớn (3.9x TB20). Đây là nỗ lực tăng giá rõ rệt.",
+      "action": "Tín hiệu Tích cực. Quan sát khả năng phá vỡ kháng cự. Cân nhắc mua nếu giá vượt qua đỉnh gần nhất.",
+      "counter": "Rủi ro là lực mua có thể không đủ mạnh để phá vỡ kháng cự và giá có thể bị bán ngược trở lại."
+    },
+    {
+      "ticker": "NDN",
+      "name": "CTCP Dau tu Phat trien Nha Da Nang",
+      "sector": "Tai chinh",
+      "exchange": "HNX",
+      "close_price": 12.1,
+      "change": "-0.20 | -1.63%",
+      "change_positive": false,
+      "signal": "Test for Supply",
+      "analysis": "Phiên giao dịch (giảm hoặc đi ngang) có spread hẹp (1.68%) và khối lượng rất thấp (0.4x TB20). Điều này cho thấy nguồn cung giá thấp đã cạn kiệt.",
+      "action": "Tín hiệu Tích cực. Đây là điều kiện tốt để giá tăng. Cân nhắc mua vào nếu giá bùng nổ khỏi nền này với khối lượng lớn.",
+      "counter": "Tuy nhiên, nếu lực cầu không sớm quay lại, giá có thể tiếp tục đi ngang hoặc suy yếu do thiếu sự quan tâm."
+    },
+    {
+      "ticker": "NVL",
+      "name": "CTCP Tap doan Dau tu Dia oc No Va",
+      "sector": "Tai chinh",
+      "exchange": "HSX",
+      "close_price": 13.5,
+      "change": "-0.25 | -1.82%",
+      "change_positive": false,
+      "signal": "Test for Supply",
+      "analysis": "Phiên giao dịch (giảm hoặc đi ngang) có spread hẹp (1.85%) và khối lượng rất thấp (0.2x TB20). Điều này cho thấy nguồn cung giá thấp đã cạn kiệt.",
+      "action": "Tín hiệu Tích cực. Đây là điều kiện tốt để giá tăng. Cân nhắc mua vào nếu giá bùng nổ khỏi nền này với khối lượng lớn.",
+      "counter": "Tuy nhiên, nếu lực cầu không sớm quay lại, giá có thể tiếp tục đi ngang hoặc suy yếu do thiếu sự quan tâm."
+    },
+    {
+      "ticker": "PAC",
+      "name": "CTCP Pin Ac quy mien Nam",
+      "sector": "Hang tieu dung",
+      "exchange": "HSX",
+      "close_price": 24.35,
+      "change": "+1.55 | +6.80%",
+      "change_positive": true,
+      "signal": "Effort to Rise (Breakout)",
+      "analysis": "Phiên tăng điểm với spread rộng (5.87%) và đóng cửa ở mức cao nhất (vị trí 1.00), đi kèm khối lượng lớn (2.0x TB20). Giá đã chính thức phá vỡ vùng kháng cự 10 phiên.",
+      "action": "Tín hiệu Sức mạnh. Xác nhận xu hướng tăng. Có thể mua vào hoặc gia tăng tỷ trọng. Đặt dừng lỗ dưới mức hỗ trợ vừa vượt qua.",
+      "counter": "Rủi ro là RSI (55.9) có thể đang ở mức cao, làm tăng khả năng điều chỉnh ngắn hạn sau phá vỡ."
+    },
+    {
+      "ticker": "PPC",
+      "name": "CTCP Nhiet dien Pha Lai",
+      "sector": "Cac dich vu ha tang",
+      "exchange": "HSX",
+      "close_price": 10.35,
+      "change": "+0.00 | +0.00%",
+      "change_positive": false,
+      "signal": "Test for Supply",
+      "analysis": "Phiên giao dịch (giảm hoặc đi ngang) có spread hẹp (0.98%) và khối lượng rất thấp (0.6x TB20). Điều này cho thấy nguồn cung giá thấp đã cạn kiệt.",
+      "action": "Tín hiệu Tích cực. Đây là điều kiện tốt để giá tăng. Cân nhắc mua vào nếu giá bùng nổ khỏi nền này với khối lượng lớn.",
+      "counter": "Tuy nhiên, nếu lực cầu không sớm quay lại, giá có thể tiếp tục đi ngang hoặc suy yếu do thiếu sự quan tâm."
+    },
+    {
+      "ticker": "SBT",
+      "name": "CTCP Thanh Thanh Cong-Bien Hoa",
+      "sector": "Hang tieu dung",
+      "exchange": "HSX",
+      "close_price": 25.3,
+      "change": "-0.15 | -0.59%",
+      "change_positive": false,
+      "signal": "Test for Supply",
+      "analysis": "Phiên giao dịch (giảm hoặc đi ngang) có spread hẹp (1.39%) và khối lượng rất thấp (0.6x TB20). Điều này cho thấy nguồn cung giá thấp đã cạn kiệt.",
+      "action": "Tín hiệu Tích cực. Đây là điều kiện tốt để giá tăng. Cân nhắc mua vào nếu giá bùng nổ khỏi nền này với khối lượng lớn.",
+      "counter": "Tuy nhiên, nếu lực cầu không sớm quay lại, giá có thể tiếp tục đi ngang hoặc suy yếu do thiếu sự quan tâm."
+    },
+    {
+      "ticker": "VAB",
+      "name": "Ngan hang TMCP Viet A",
+      "sector": "Tai chinh",
+      "exchange": "UPCOM",
+      "close_price": 11.15,
+      "change": "+0.00 | +0.00%",
+      "change_positive": false,
+      "signal": "Test for Supply",
+      "analysis": "Phiên giao dịch (giảm hoặc đi ngang) có spread hẹp (1.36%) và khối lượng rất thấp (0.3x TB20). Điều này cho thấy nguồn cung giá thấp đã cạn kiệt.",
+      "action": "Tín hiệu Tích cực. Đây là điều kiện tốt để giá tăng. Cân nhắc mua vào nếu giá bùng nổ khỏi nền này với khối lượng lớn.",
+      "counter": "Tuy nhiên, nếu lực cầu không sớm quay lại, giá có thể tiếp tục đi ngang hoặc suy yếu do thiếu sự quan tâm."
+    },
+    {
+      "ticker": "VGS",
+      "name": "CTCP Ong thep Viet-Duc VG PIPE",
+      "sector": "Vat lieu co ban",
+      "exchange": "HNX",
+      "close_price": 28.4,
+      "change": "-0.10 | -0.35%",
+      "change_positive": false,
+      "signal": "Test for Supply",
+      "analysis": "Phiên giao dịch (giảm hoặc đi ngang) có spread hẹp (1.77%) và khối lượng rất thấp (0.2x TB20). Điều này cho thấy nguồn cung giá thấp đã cạn kiệt.",
+      "action": "Tín hiệu Tích cực. Đây là điều kiện tốt để giá tăng. Cân nhắc mua vào nếu giá bùng nổ khỏi nền này với khối lượng lớn.",
+      "counter": "Tuy nhiên, nếu lực cầu không sớm quay lại, giá có thể tiếp tục đi ngang hoặc suy yếu do thiếu sự quan tâm."
+    },
+    {
+      "ticker": "VPI",
+      "name": "CTCP Dau tu Van Phu-Invest",
+      "sector": "Tai chinh",
+      "exchange": "HSX",
+      "close_price": 53.0,
+      "change": "-1.10 | -2.03%",
+      "change_positive": false,
+      "signal": "Stopping Volume",
+      "analysis": "Phiên giảm điểm với spread rộng, nhưng đóng cửa ở nửa trên (vị trí 0.64), với Volume cao đột biến (1.8x TB20). Điều này cho thấy lực mua đã xuất hiện để hấp thụ mạnh lực bán.",
+      "action": "Tín hiệu Tích cực. Quan sát các phiên kiểm tra (test) cung tiếp theo. Cân nhắc mua thăm dò nếu giá giữ vững trên vùng hỗ trợ này.",
+      "counter": "Rủi ro là đây có thể chỉ là một nhịp hồi kỹ thuật; cần thêm tín hiệu xác nhận lực cầu duy trì."
+    },
+{
+      "ticker": "ACB",
+      "name": "Ngan hang TMCP A Chau",
+      "sector": "Tai chinh",
+      "exchange": "HSX",
+      "close_price": 25.3,
+      "change": "-0.30 | -1.17%",
+      "change_positive": false,
+      "signal": "Test for Supply",
+      "analysis": "Phiên ACB giảm nhẹ (hoặc không tăng) với spread rất hẹp (1.6%) và khối lượng cạn kiệt (47% so với TB20). Điều này cho thấy nguồn cung giá thấp đã cạn kiệt, tạo điều kiện cho giá tăng.",
+      "action": "Tín hiệu tích cực. Cân nhắc mua vào nếu giá bùng nổ vượt kháng cự gần nhất với khối lượng lớn.",
+      "counter": "Rủi ro là nếu lực cầu không sớm quay lại, giá có thể tiếp tục đi ngang hoặc giảm do thiếu sự quan tâm."
+    },
+    {
+      "ticker": "BAF",
+      "name": "CTCP Nong nghiep BAF Viet Nam",
+      "sector": "Hang tieu dung",
+      "exchange": "HSX",
+      "close_price": 32.15,
+      "change": "-0.10 | -0.31%",
+      "change_positive": false,
+      "signal": "Test for Supply",
+      "analysis": "Phiên BAF giảm nhẹ (hoặc không tăng) với spread rất hẹp (0.8%) và khối lượng cạn kiệt (40% so với TB20). Điều này cho thấy nguồn cung giá thấp đã cạn kiệt, tạo điều kiện cho giá tăng.",
+      "action": "Tín hiệu tích cực. Cân nhắc mua vào nếu giá bùng nổ vượt kháng cự gần nhất với khối lượng lớn.",
+      "counter": "Rủi ro là nếu lực cầu không sớm quay lại, giá có thể tiếp tục đi ngang hoặc giảm do thiếu sự quan tâm."
+    },
+    {
+      "ticker": "BID",
+      "name": "Ngan hang TMCP Dau tu va Phat trien Viet Nam",
+      "sector": "Tai chinh",
+      "exchange": "HSX",
+      "close_price": 38.5,
+      "change": "-0.15 | -0.39%",
+      "change_positive": false,
+      "signal": "Test for Supply",
+      "analysis": "Phiên BID giảm nhẹ (hoặc không tăng) với spread rất hẹp (1.4%) và khối lượng cạn kiệt (61% so với TB20). Điều này cho thấy nguồn cung giá thấp đã cạn kiệt, tạo điều kiện cho giá tăng.",
+      "action": "Tín hiệu tích cực. Cân nhắc mua vào nếu giá bùng nổ vượt kháng cự gần nhất với khối lượng lớn.",
+      "counter": "Rủi ro là nếu lực cầu không sớm quay lại, giá có thể tiếp tục đi ngang hoặc giảm do thiếu sự quan tâm."
+    },
+    {
+      "ticker": "DBC",
+      "name": "CTCP Tap doan Dabaco Viet Nam",
+      "sector": "Hang tieu dung",
+      "exchange": "HSX",
+      "close_price": 25.75,
+      "change": "-0.05 | -0.19%",
+      "change_positive": false,
+      "signal": "Test for Supply",
+      "analysis": "Phiên DBC giảm nhẹ (hoặc không tăng) với spread rất hẹp (1.8%) và khối lượng cạn kiệt (43% so với TB20). Điều này cho thấy nguồn cung giá thấp đã cạn kiệt, tạo điều kiện cho giá tăng.",
+      "action": "Tín hiệu tích cực. Cân nhắc mua vào nếu giá bùng nổ vượt kháng cự gần nhất với khối lượng lớn.",
+      "counter": "Rủi ro là nếu lực cầu không sớm quay lại, giá có thể tiếp tục đi ngang hoặc giảm do thiếu sự quan tâm."
+    },
+    {
+      "ticker": "HAH",
+      "name": "CTCP Van tai va Xep do Hai An",
+      "sector": "Cong nghiep",
+      "exchange": "HSX",
+      "close_price": 62.6,
+      "change": "+1.70 | +2.79%",
+      "change_positive": true,
+      "signal": "Effort to Rise (Breakout)",
+      "analysis": "Phiên tăng điểm HAH có spread rộng (5.6%) và đóng cửa ở mức cao nhất, đi kèm khối lượng lớn (103% so với TB20). Giá đã chính thức phá vỡ vùng kháng cự 10 phiên. Tuy nhiên, volume chỉ ở mức 103% (chưa đạt 120% theo quy tắc) nên tín hiệu cần được kiểm chứng thêm.",
+      "action": "Tín hiệu xác nhận xu hướng tăng. Có thể mua vào hoặc gia tăng tỷ trọng. Đặt dừng lỗ dưới mức hỗ trợ vừa vượt qua.",
+      "counter": "Cần chú ý nếu RSI (62.8) đang ở vùng quá mua (> 75), có thể xảy ra nhịp điều chỉnh ngắn hạn."
+    },
+    {
+      "ticker": "IDC",
+      "name": "Tong cong ty IDICO-CTCP",
+      "sector": "Tai chinh",
+      "exchange": "HNX",
+      "close_price": 38.3,
+      "change": "-0.30 | -0.78%",
+      "change_positive": false,
+      "signal": "Test for Supply",
+      "analysis": "Phiên IDC giảm nhẹ (hoặc không tăng) với spread rất hẹp (1.3%) và khối lượng cạn kiệt (43% so với TB20). Điều này cho thấy nguồn cung giá thấp đã cạn kiệt, tạo điều kiện cho giá tăng.",
+      "action": "Tín hiệu tích cực. Cân nhắc mua vào nếu giá bùng nổ vượt kháng cự gần nhất với khối lượng lớn.",
+      "counter": "Rủi ro là nếu lực cầu không sớm quay lại, giá có thể tiếp tục đi ngang hoặc giảm do thiếu sự quan tâm."
+    },
+    {
+      "ticker": "PC1",
+      "name": "CTCP Tap doan PC1",
+      "sector": "Cong nghiep",
+      "exchange": "HSX",
+      "close_price": 24.75,
+      "change": "+0.15 | +0.61%",
+      "change_positive": true,
+      "signal": "Effort to Rise",
+      "analysis": "Phiên tăng điểm PC1 có spread rộng (2.4%) và đóng cửa ở mức cao nhất, đi kèm khối lượng lớn (80% so với TB20). Đây là nỗ lực tăng giá rõ rệt. Tuy nhiên, volume chưa đạt 120% và spread chưa đạt 3% nên tín hiệu ở mức trung bình.",
+      "action": "Tín hiệu xác nhận xu hướng tăng. Có thể mua vào hoặc gia tăng tỷ trọng. Đặt dừng lỗ dưới mức hỗ trợ vừa vượt qua.",
+      "counter": "Cần chú ý nếu RSI (57.1) đang ở vùng quá mua (> 75), có thể xảy ra nhịp điều chỉnh ngắn hạn."
+    },
+    {
+      "ticker": "PVD",
+      "name": "Tong CTCP Khoan va Dich vu Khoan Dau khi",
+      "sector": "Dau khi",
+      "exchange": "HSX",
+      "close_price": 24.7,
+      "change": "+0.45 | +1.86%",
+      "change_positive": true,
+      "signal": "Conflicting Signals",
+      "analysis": "Tín hiệu VSA (Nỗ lực tăng với spread 5.0% và volume 168%) đang mâu thuẫn với chỉ báo kỹ thuật RSI 75.1 (đã vào vùng quá mua). Cần thêm thời gian để xác nhận.",
+      "action": "Ưu tiên quan sát. Không nên hành động vội vàng khi các tín hiệu chưa đồng thuận. Hạn chế mua đuổi.",
+      "counter": "Đây là vùng giao dịch khó, RSI có thể duy trì ở mức cao trong một xu hướng tăng mạnh, nhưng rủi ro điều chỉnh là hiện hữu."
+    },
+    {
+      "ticker": "TNG",
+      "name": "CTCP Dau tu va Thuong mai TNG",
+      "sector": "Hang tieu dung",
+      "exchange": "HNX",
+      "close_price": 19.6,
+      "change": "+0.20 | +1.03%",
+      "change_positive": true,
+      "signal": "Effort to Rise",
+      "analysis": "Phiên tăng điểm TNG có spread rộng (4.1%) và đóng cửa ở mức cao nhất, đi kèm khối lượng lớn (206% so với TB20). Đây là nỗ lực tăng giá rõ rệt.",
+      "action": "Tín hiệu xác nhận xu hướng tăng. Có thể mua vào hoặc gia tăng tỷ trọng. Đặt dừng lỗ dưới mức hỗ trợ vừa vượt qua.",
+      "counter": "Cần chú ý nếu RSI (55.7) đang ở vùng quá mua (> 75), có thể xảy ra nhịp điều chỉnh ngắn hạn."
+    },
+    {
+      "ticker": "VHC",
+      "name": "CTCP Vinh Hoan",
+      "sector": "Hang tieu dung",
+      "exchange": "HSX",
+      "close_price": 57.7,
+      "change": "-1.00 | -1.70%",
+      "change_positive": false,
+      "signal": "Test for Supply",
+      "analysis": "Phiên VHC giảm nhẹ (hoặc không tăng) với spread rất hẹp (1.7%) và khối lượng cạn kiệt (72% so với TB20). Tuy nhiên, volume 72% là ở mức biên (gần 70%) nên tín hiệu cạn cung chưa quá mạnh.",
+      "action": "Tín hiệu tích cực. Cân nhắc mua vào nếu giá bùng nổ vượt kháng cự gần nhất với khối lượng lớn.",
+      "counter": "Rủi ro là nếu lực cầu không sớm quay lại, giá có thể tiếp tục đi ngang hoặc giảm do thiếu sự quan tâm."
+    }
+  ],
+  "weakness": [
+    {
+      "ticker": "ACV",
+      "name": "Tong Cong ty Cang hang khong Viet Nam-CTCP",
+      "sector": "Cong nghiep",
+      "exchange": "UPCOM",
+      "close_price": 56.4,
+      "change": "+1.50 | +2.73%",
+      "change_positive": true,
+      "signal": "Buying Climax",
+      "analysis": "Phiên tăng điểm mạnh với spread rất rộng (5.28%) và khối lượng siêu cao (2.9x TB20), nhưng giá bị bán ngược và đóng cửa không ở mức cao nhất (vị trí 0.52). Đây là dấu hiệu của Cao trào mua (BC).",
+      "action": "Tín hiệu Cảnh báo/Tiêu cực. Lực bán lớn đã xuất hiện. Hạn chế mua đuổi, cân nhắc chốt lời. Đây có thể là điểm bắt đầu của một vùng phân phối.",
+      "counter": "Một số trường hợp, Buying Climax có thể được hấp thụ và giá tiếp tục tăng, nhưng rủi ro điều chỉnh ngay sau đó là rất cao."
+    },
+    {
+      "ticker": "CSV",
+      "name": "CTCP Hoa chat Co ban mien Nam",
+      "sector": "Vat lieu co ban",
+      "exchange": "HSX",
+      "close_price": 32.1,
+      "change": "+0.30 | +0.94%",
+      "change_positive": true,
+      "signal": "Upthrust (UTAD)",
+      "analysis": "Phiên tăng điểm nhưng bị bán ngược mạnh, đóng cửa ở nửa dưới của nến (vị trí 0.34), với khối lượng cao (1.4x TB20). Đây là tín hiệu phá vỡ giả (UTAD) cho thấy lực bán đang chiếm ưu thế.",
+      "action": "Tín hiệu Tiêu cực. Cân nhắc hạ tỷ trọng hoặc chốt lời. Không nên mua đuổi ở vùng giá này.",
+      "counter": "Tín hiệu này có thể thất bại (chỉ là một nhịp rũ bỏ) nếu giá nhanh chóng lấy lại đà tăng và vượt qua đỉnh của nến Upthrust."
+    },
+    {
+      "ticker": "VFS",
+      "name": "CTCP Chung khoan Nhat Viet",
+      "sector": "Tai chinh",
+      "exchange": "HNX",
+      "close_price": 16.9,
+      "change": "+0.10 | +0.60%",
+      "change_positive": true,
+      "signal": "No Demand",
+      "analysis": "Phiên tăng điểm (hoặc nỗ lực tăng) với spread hẹp (1.80%) và khối lượng rất thấp (0.1x TB20). Điều này cho thấy thiếu lực cầu (người mua) sẵn sàng đẩy giá lên cao hơn.",
+      "action": "Tín hiệu Tiêu cực/Cảnh báo. Xu hướng tăng có thể đang suy yếu. Quan sát chặt chẽ, cân nhắc chốt lời một phần.",
+      "counter": "Đôi khi No Demand có thể xuất hiện trong một giai đoạn tích lũy (absorption) trước khi tăng tiếp, nhưng rủi ro vẫn cao hơn."
+    },
+{
+      "ticker": "FPT",
+      "name": "CTCP FPT",
+      "sector": "Cong nghe",
+      "exchange": "HSX",
+      "close_price": 100.2,
+      "change": "-0.70 | -0.69%",
+      "change_positive": false,
+      "signal": "Effort to Fall (Breakdown)",
+      "analysis": "Phiên giảm điểm FPT có spread rộng (2.6%) và đóng cửa ở mức thấp nhất (vị trí 0.31). Khối lượng thấp (53% so với TB20) cho thấy áp lực bán không quá mạnh, nhưng cũng thiếu cầu đỡ. Quy tắc Breakdown (cần vol > 120%) không được đáp ứng, nhưng đóng cửa ở mức thấp là một tín hiệu yếu.",
+      "action": "Tín hiệu tiêu cực. Cân nhắc bán hoặc hạ tỷ trọng. Không nên bắt đáy cho đến khi có tín hiệu đảo chiều rõ ràng.",
+      "counter": "Rủi ro là đây có thể là một cú \"shake-out\" mạnh, và giá sẽ nhanh chóng hồi phục nếu lực cầu bắt đáy xuất hiện."
+    },
+    {
+      "ticker": "MBB",
+      "name": "Ngan hang TMCP Quan Doi",
+      "sector": "Tai chinh",
+      "exchange": "HSX",
+      "close_price": 23.7,
+      "change": "-0.20 | -0.84%",
+      "change_positive": false,
+      "signal": "Effort to Fall (Breakdown)",
+      "analysis": "Phiên giảm điểm MBB có spread rộng (2.1%) và đóng cửa ở mức thấp nhất (vị trí 0.20). Khối lượng thấp (29% so với TB20) cho thấy áp lực bán không mạnh, nhưng nến đóng cửa ở mức thấp nhất thể hiện sự thiếu quyết liệt của bên mua.",
+      "action": "Tín hiệu tiêu cực. Cân nhắc bán hoặc hạ tỷ trọng. Không nên bắt đáy cho đến khi có tín hiệu đảo chiều rõ ràng.",
+      "counter": "Rủi ro là đây có thể là một cú \"shake-out\" mạnh, và giá sẽ nhanh chóng hồi phục nếu lực cầu bắt đáy xuất hiện."
+    },
+    {
+      "ticker": "TCB",
+      "name": "Ngan hang TMCP Ky thuong Viet Nam",
+      "sector": "Tai chinh",
+      "exchange": "HSX",
+      "close_price": 33.6,
+      "change": "-0.50 | -1.47%",
+      "change_positive": false,
+      "signal": "Effort to Fall (Breakdown)",
+      "analysis": "Phiên giảm điểm TCB có spread rộng (3.0%) và đóng cửa ở mức thấp nhất (vị trí 0.10). Khối lượng thấp (70% so với TB20) cho thấy bên bán không quá áp đảo, nhưng việc thiếu cầu đỡ ở vùng giá thấp là một tín hiệu yếu.",
+      "action": "Tín hiệu tiêu cực. Cân nhắc bán hoặc hạ tỷ trọng. Không nên bắt đáy cho đến khi có tín hiệu đảo chiều rõ ràng.",
+      "counter": "Rủi ro là đây có thể là một cú \"shake-out\" mạnh, và giá sẽ nhanh chóng hồi phục nếu lực cầu bắt đáy xuất hiện."
+    },
+    {
+      "ticker": "VCG",
+      "name": "Tong CTCP Xuat nhap khau va Xay dung Viet Nam",
+      "sector": "Cong nghiep",
+      "exchange": "HSX",
+      "close_price": 24.25,
+      "change": "+0.05 | +0.21%",
+      "change_positive": true,
+      "signal": "Upthrust (UTAD)",
+      "analysis": "Mặc dù VCG là một phiên tăng điểm, giá đã bị bán ngược mạnh và đóng cửa ở nửa dưới của nến (vị trí 0.33). Khối lượng thấp (42% so với TB20) không xác nhận áp lực phân phối mạnh, nhưng cho thấy sự yếu kém của lực cầu khi giá tăng (No Demand ở vùng giá cao).",
+      "action": "Đây là tín hiệu cảnh báo đảo chiều. Cân nhắc hạ tỷ trọng hoặc chốt lời. Không nên mua đuổi.",
+      "counter": "Tín hiệu này có thể là một nhịp \"shake-out\" (rũ bỏ) nếu giá nhanh chóng lấy lại đà tăng và vượt qua đỉnh của nến này."
+    },
+    {
+      "ticker": "VHM",
+      "name": "CTCP Vinhomes",
+      "sector": "Tai chinh",
+      "exchange": "HSX",
+      "close_price": 98.9,
+      "change": "-0.70 | -0.70%",
+      "change_positive": false,
+      "signal": "Effort to Fall (Breakdown)",
+      "analysis": "Phiên giảm điểm VHM có spread rộng (4.0%) và đóng cửa ở mức thấp nhất (vị trí 0.33). Khối lượng thấp (59% so với TB20) cho thấy áp lực bán không quá mạnh, nhưng nến giảm dứt khoát và đóng cửa gần đáy thể hiện sự yếu thế của bên mua.",
+      "action": "Tín hiệu tiêu cực. Cân nhắc bán hoặc hạ tỷ trọng. Không nên bắt đáy cho đến khi có tín hiệu đảo chiều rõ ràng.",
+      "counter": "Rủi ro là đây có thể là một cú \"shake-out\" mạnh, và giá sẽ nhanh chóng hồi phục nếu lực cầu bắt đáy xuất hiện."
+    },
+    {
+      "ticker": "VRE",
+      "name": "CTCP Vincom Retail",
+      "sector": "Tai chinh",
+      "exchange": "HSX",
+      "close_price": 32,
+      "change": "-0.50 | -1.54%",
+      "change_positive": false,
+      "signal": "Effort to Fall (Breakdown)",
+      "analysis": "Phiên giảm điểm VRE có spread rộng (2.4%) và đóng cửa ở mức thấp nhất (vị trí 0.27). Khối lượng thấp (49% so với TB20) cho thấy bên bán không quá áp đảo, nhưng việc thiếu cầu đỡ ở vùng giá thấp là một tín hiệu yếu.",
+      "action": "Tín hiệu tiêu cực. Cân nhắc bán hoặc hạ tỷ trọng. Không nên bắt đáy cho đến khi có tínHieu đảo chiều rõ ràng.",
+      "counter": "Rủi ro là đây có thể là một cú \"shake-out\" mạnh, và giá sẽ nhanh chóng hồi phục nếu lực cầu bắt đáy xuất hiện."
+    }
+],
+  "observe": [
+{
+      "ticker": "ABB",
+      "name": "Ngan hang TMCP An Binh",
+      "sector": "Tai chinh",
+      "exchange": "UPCOM",
+      "close_price": 12.8,
+      "change": "-0.10 | -0.78%",
+      "change_positive": false,
+      "signal": "No Clear Signal",
+      "analysis": "Phiên giao dịch không khớp với bất kỳ mẫu hình VSA rõ ràng nào. Các chỉ số O-H-L-C và Volume ở mức trung tính. Chỉ báo RSI (48.9) và MACD Hist (-0.05).",
+      "action": "Không có tín hiệu, không hành động. Tiếp tục quan sát và chờ đợi một tín hiệu rõ ràng hơn.",
+      "counter": "Việc thiếu tín hiệu không có nghĩa là an toàn; rủi ro tiềm ẩn từ thị trường chung vẫn tồn tại."
+    },
+    {
+      "ticker": "AGR",
+      "name": "CTCP Chung khoan Agribank",
+      "sector": "Tai chinh",
+      "exchange": "HSX",
+      "close_price": 15.75,
+      "change": "-0.20 | -1.25%",
+      "change_positive": false,
+      "signal": "No Clear Signal",
+      "analysis": "Phiên giao dịch không khớp với bất kỳ mẫu hình VSA rõ ràng nào. Các chỉ số O-H-L-C và Volume ở mức trung tính. Chỉ báo RSI (38.5) và MACD Hist (0.00).",
+      "action": "Không có tín hiệu, không hành động. Tiếp tục quan sát và chờ đợi một tín hiệu rõ ràng hơn.",
+      "counter": "Việc thiếu tín hiệu không có nghĩa là an toàn; rủi ro tiềm ẩn từ thị trường chung vẫn tồn tại."
+    },
+    {
+      "ticker": "APG",
+      "name": "CTCP Chung khoan APG",
+      "sector": "Tai chinh",
+      "exchange": "HSX",
+      "close_price": 11.35,
+      "change": "+0.00 | +0.00%",
+      "change_positive": false,
+      "signal": "Normal Bar",
+      "analysis": "Phiên giao dịch diễn ra bình thường với khối lượng quanh mức trung bình (0.8x TB20). Không có tín hiệu VSA đặc biệt nào được ghi nhận.",
+      "action": "Tiếp tục quan sát. Hành động theo xu hướng chính của cổ phiếu và kỷ luật cá nhân.",
+      "counter": "Sự 'bình thường' này có thể là giai đoạn 'bình yên trước cơn bão', cần theo dõi chặt chẽ các phiên tiếp theo."
+    },
+    {
+      "ticker": "BMI",
+      "name": "Tong CTCP Bao Minh",
+      "sector": "Tai chinh",
+      "exchange": "HSX",
+      "close_price": 20.45,
+      "change": "+0.05 | +0.25%",
+      "change_positive": true,
+      "signal": "No Clear Signal",
+      "analysis": "Phiên giao dịch không khớp với bất kỳ mẫu hình VSA rõ ràng nào. Các chỉ số O-H-L-C và Volume ở mức trung tính. Chỉ báo RSI (60.3) và MACD Hist (0.15).",
+      "action": "Không có tín hiệu, không hành động. Tiếp tục quan sát và chờ đợi một tín hiệu rõ ràng hơn.",
+      "counter": "Việc thiếu tín hiệu không có nghĩa là an toàn; rủi ro tiềm ẩn từ thị trường chung vẫn tồn tại."
+    },
+    {
+      "ticker": "BSI",
+      "name": "CTCP Chung khoan BIDV",
+      "sector": "Tai chinh",
+      "exchange": "HSX",
+      "close_price": 41.8,
+      "change": "-0.25 | -0.59%",
+      "change_positive": false,
+      "signal": "No Clear Signal",
+      "analysis": "Phiên giao dịch không khớp với bất kỳ mẫu hình VSA rõ ràng nào. Các chỉ số O-H-L-C và Volume ở mức trung tính. Chỉ báo RSI (41.4) và MACD Hist (0.20).",
+      "action": "Không có tín hiệu, không hành động. Tiếp tục quan sát và chờ đợi một tín hiệu rõ ràng hơn.",
+      "counter": "Việc thiếu tín hiệu không có nghĩa là an toàn; rủi ro tiềm ẩn từ thị trường chung vẫn tồn tại."
+    },
+    {
+      "ticker": "BVB",
+      "name": "Ngan hang TMCP Ban Viet",
+      "sector": "Tai chinh",
+      "exchange": "UPCOM",
+      "close_price": 13.5,
+      "change": "-0.10 | -0.74%",
+      "change_positive": false,
+      "signal": "No Clear Signal",
+      "analysis": "Phiên giao dịch không khớp với bất kỳ mẫu hình VSA rõ ràng nào. Các chỉ số O-H-L-C và Volume ở mức trung tính. Chỉ báo RSI (44.0) và MACD Hist (0.06).",
+      "action": "Không có tín hiệu, không hành động. Tiếp tục quan sát và chờ đợi một tín hiệu rõ ràng hơn.",
+      "counter": "Việc thiếu tín hiệu không có nghĩa là an toàn; rủi ro tiềm ẩn từ thị trường chung vẫn tồn tại."
+    },
+    {
+      "ticker": "C69",
+      "name": "CTCP Xay dung 1369",
+      "sector": "Cong nghiep",
+      "exchange": "HNX",
+      "close_price": 11.9,
+      "change": "-0.10 | -0.83%",
+      "change_positive": false,
+      "signal": "Normal Bar",
+      "analysis": "Phiên giao dịch diễn ra bình thường với khối lượng quanh mức trung bình (1.0x TB20). Không có tín hiệu VSA đặc biệt nào được ghi nhận.",
+      "action": "Tiếp tục quan sát. Hành động theo xu hướng chính của cổ phiếu và kỷ luật cá nhân.",
+      "counter": "Sự 'bình thường' này có thể là giai đoạn 'bình yên trước cơn bão', cần theo dõi chặt chẽ các phiên tiếp theo."
+    },
+    {
+      "ticker": "CDC",
+      "name": "CTCP Chuong Duong",
+      "sector": "Cong nghiep",
+      "exchange": "HSX",
+      "close_price": 28.8,
+      "change": "-0.10 | -0.35%",
+      "change_positive": false,
+      "signal": "Indecision Bar (Doji)",
+      "analysis": "Nến có thân nến rất hẹp (Doji), cho thấy sự do dự và cân bằng tạm thời giữa bên mua và bên bán. MACD Hist (0.09) và RSI (58.8) cũng đang ở mức trung tính.",
+      "action": "Quan sát chặt chẽ. Nến Doji thường báo hiệu một sự thay đổi xu hướng sắp diễn ra, hoặc sự tiếp diễn yếu ớt. Chờ xác nhận từ nến tiếp theo.",
+      "counter": "Một nến Doji đơn lẻ không có nhiều ý nghĩa nếu không nằm ở vùng hỗ trợ/kháng cự quan trọng."
+    },
+    {
+      "ticker": "CEO",
+      "name": "CTCP Tap doan C.E.O",
+      "sector": "Tai chinh",
+      "exchange": "HNX",
+      "close_price": 24.5,
+      "change": "+0.00 | +0.00%",
+      "change_positive": false,
+      "signal": "Indecision Bar (Doji)",
+      "analysis": "Nến có thân nến rất hẹp (Doji), cho thấy sự do dự và cân bằng tạm thời giữa bên mua và bên bán. MACD Hist (-0.70) và RSI (42.5) cũng đang ở mức trung tính.",
+      "action": "Quan sát chặt chẽ. Nến Doji thường báo hiệu một sự thay đổi xu hướng sắp diễn ra, hoặc sự tiếp diễn yếu ớt. Chờ xác nhận từ nến tiếp theo.",
+      "counter": "Một nến Doji đơn lẻ không có nhiều ý nghĩa nếu không nằm ở vùng hỗ trợ/kháng cự quan trọng."
+    },
+    {
+      "ticker": "CII",
+      "name": "CTCP Dau tu Ha tang Ky thuat Thanh pho Ho Chi Minh",
+      "sector": "Cong nghiep",
+      "exchange": "HSX",
+      "close_price": 23.4,
+      "change": "+0.40 | +1.74%",
+      "change_positive": true,
+      "signal": "No Clear Signal",
+      "analysis": "Phiên giao dịch không khớp với bất kỳ mẫu hình VSA rõ ràng nào. Các chỉ số O-H-L-C và Volume ở mức trung tính. Chỉ báo RSI (41.7) và MACD Hist (-0.58).",
+      "action": "Không có tín hiệu, không hành động. Tiếp tục quan sát và chờ đợi một tín hiệu rõ ràng hơn.",
+      "counter": "Việc thiếu tín hiệu không có nghĩa là an toàn; rủi ro tiềm ẩn từ thị trường chung vẫn tồn tại."
+    },
+    {
+      "ticker": "CSM",
+      "name": "CTCP Cong nghiep cao su Mien Nam",
+      "sector": "Hang tieu dung",
+      "exchange": "HSX",
+      "close_price": 14.3,
+      "change": "+0.30 | +2.14%",
+      "change_positive": true,
+      "signal": "Normal Bar",
+      "analysis": "Phiên giao dịch diễn ra bình thường với khối lượng quanh mức trung bình (1.2x TB20). Không có tín hiệu VSA đặc biệt nào được ghi nhận.",
+      "action": "Tiếp tục quan sát. Hành động theo xu hướng chính của cổ phiếu và kỷ luật cá nhân.",
+      "counter": "Sự 'bình thường' này có thể là giai đoạn 'bình yên trước cơn bão', cần theo dõi chặt chẽ các phiên tiếp theo."
+    },
+    {
+      "ticker": "CTF",
+      "name": "CTCP City Auto",
+      "sector": "Hang tieu dung",
+      "exchange": "HSX",
+      "close_price": 20.1,
+      "change": "+0.00 | +0.00%",
+      "change_positive": false,
+      "signal": "Normal Bar",
+      "analysis": "Phiên giao dịch diễn ra bình thường với khối lượng quanh mức trung bình (1.1x TB20). Không có tín hiệu VSA đặc biệt nào được ghi nhận.",
+      "action": "Tiếp tục quan sát. Hành động theo xu hướng chính của cổ phiếu và kỷ luật cá nhân.",
+      "counter": "Sự 'bình thường' này có thể là giai đoạn 'bình yên trước cơn bão', cần theo dõi chặt chẽ các phiên tiếp theo."
+    },
+    {
+      "ticker": "CTS",
+      "name": "CTCP Chung khoan Ngan hang Cong thuong Viet Nam",
+      "sector": "Tai chinh",
+      "exchange": "HSX",
+      "close_price": 36.65,
+      "change": "-0.75 | -2.01%",
+      "change_positive": false,
+      "signal": "No Clear Signal",
+      "analysis": "Phiên giao dịch không khớp với bất kỳ mẫu hình VSA rõ ràng nào. Các chỉ số O-H-L-C và Volume ở mức trung tính. Chỉ báo RSI (39.0) và MACD Hist (-0.48).",
+      "action": "Không có tín hiệu, không hành động. Tiếp tục quan sát và chờ đợi một tín hiệu rõ ràng hơn.",
+      "counter": "Việc thiếu tín hiệu không có nghĩa là an toàn; rủi ro tiềm ẩn từ thị trường chung vẫn tồn tại."
+    },
+    {
+      "ticker": "DCL",
+      "name": "CTCP Duoc pham Cuu Long",
+      "sector": "Y te",
+      "exchange": "HSX",
+      "close_price": 34.25,
+      "change": "-0.25 | -0.72%",
+      "change_positive": false,
+      "signal": "No Clear Signal",
+      "analysis": "Phiên giao dịch không khớp với bất kỳ mẫu hình VSA rõ ràng nào. Các chỉ số O-H-L-C và Volume ở mức trung tính. Chỉ báo RSI (71.2) và MACD Hist (0.31).",
+      "action": "Không có tín hiệu, không hành động. Tiếp tục quan sát và chờ đợi một tín hiệu rõ ràng hơn.",
+      "counter": "Việc thiếu tín hiệu không có nghĩa là an toàn; rủi ro tiềm ẩn từ thị trường chung vẫn tồn tại."
+    },
+    {
+      "ticker": "DDV",
+      "name": "CTCP DAP-VINACHEM",
+      "sector": "Vat lieu co ban",
+      "exchange": "UPCOM",
+      "close_price": 30.3,
+      "change": "-0.10 | -0.33%",
+      "change_positive": false,
+      "signal": "No Clear Signal",
+      "analysis": "Phiên giao dịch không khớp với bất kỳ mẫu hình VSA rõ ràng nào. Các chỉ số O-H-L-C và Volume ở mức trung tính. Chỉ báo RSI (42.3) và MACD Hist (-0.45).",
+      "action": "Không có tín hiệu, không hành động. Tiếp tục quan sát và chờ đợi một tín hiệu rõ ràng hơn.",
+      "counter": "Việc thiếu tín hiệu không có nghĩa là an toàn; rủi ro tiềm ẩn từ thị trường chung vẫn tồn tại."
+    },
+    {
+      "ticker": "DPR",
+      "name": "CTCP Cao su Dong Phu",
+      "sector": "Vat lieu co ban",
+      "exchange": "HSX",
+      "close_price": 37.7,
+      "change": "-0.35 | -0.92%",
+      "change_positive": false,
+      "signal": "No Clear Signal",
+      "analysis": "Phiên giao dịch không khớp với bất kỳ mẫu hình VSA rõ ràng nào. Các chỉ số O-H-L-C và Volume ở mức trung tính. Chỉ báo RSI (50.3) và MACD Hist (0.18).",
+      "action": "Không có tín hiệu, không hành động. Tiếp tục quan sát và chờ đợi một tín hiệu rõ ràng hơn.",
+      "counter": "Việc thiếu tín hiệu không có nghĩa là an toàn; rủi ro tiềm ẩn từ thị trường chung vẫn tồn tại."
+    },
+    {
+      "ticker": "DRI",
+      "name": "CTCP Dau tu Cao su Dak Lak",
+      "sector": "Vat lieu co ban",
+      "exchange": "UPCOM",
+      "close_price": 12.0,
+      "change": "+0.30 | +2.56%",
+      "change_positive": true,
+      "signal": "Normal Bar",
+      "analysis": "Phiên giao dịch diễn ra bình thường với khối lượng quanh mức trung bình (1.0x TB20). Không có tín hiệu VSA đặc biệt nào được ghi nhận.",
+      "action": "Tiếp tục quan sát. Hành động theo xu hướng chính của cổ phiếu và kỷ luật cá nhân.",
+      "counter": "Sự 'bình thường' này có thể là giai đoạn 'bình yên trước cơn bão', cần theo dõi chặt chẽ các phiên tiếp theo."
+    },
+    {
+      "ticker": "DSE",
+      "name": "CTCP Chung khoan DNSE",
+      "sector": "Tai chinh",
+      "exchange": "HSX",
+      "close_price": 25.2,
+      "change": "-0.10 | -0.40%",
+      "change_positive": false,
+      "signal": "No Clear Signal",
+      "analysis": "Phiên giao dịch không khớp với bất kỳ mẫu hình VSA rõ ràng nào. Các chỉ số O-H-L-C và Volume ở mức trung tính. Chỉ báo RSI (42.8) và MACD Hist (0.08).",
+      "action": "Không có tín hiệu, không hành động. Tiếp tục quan sát và chờ đợi một tín hiệu rõ ràng hơn.",
+      "counter": "Việc thiếu tín hiệu không có nghĩa là an toàn; rủi ro tiềm ẩn từ thị trường chung vẫn tồn tại."
+    },
+    {
+      "ticker": "DTD",
+      "name": "CTCP Dau tu Phat trien Thanh Dat",
+      "sector": "Cong nghiep",
+      "exchange": "HNX",
+      "close_price": 19.0,
+      "change": "+0.10 | +0.53%",
+      "change_positive": true,
+      "signal": "Indecision Bar (Doji)",
+      "analysis": "Nến có thân nến rất hẹp (Doji), cho thấy sự do dự và cân bằng tạm thời giữa bên mua và bên bán. MACD Hist (-0.11) và RSI (38.9) cũng đang ở mức trung tính.",
+      "action": "Quan sát chặt chẽ. Nến Doji thường báo hiệu một sự thay đổi xu hướng sắp diễn ra, hoặc sự tiếp diễn yếu ớt. Chờ xác nhận từ nến tiếp theo.",
+      "counter": "Một nến Doji đơn lẻ không có nhiều ý nghĩa nếu không nằm ở vùng hỗ trợ/kháng cự quan trọng."
+    },
+    {
+      "ticker": "DXS",
+      "name": "CTCP Dich vu Bat dong san Dat Xanh",
+      "sector": "Tai chinh",
+      "exchange": "HSX",
+      "close_price": 10.1,
+      "change": "-0.20 | -1.94%",
+      "change_positive": false,
+      "signal": "No Clear Signal",
+      "analysis": "Phiên giao dịch không khớp với bất kỳ mẫu hình VSA rõ ràng nào. Các chỉ số O-H-L-C và Volume ở mức trung tính. Chỉ báo RSI (38.5) và MACD Hist (-0.06).",
+      "action": "Không có tín hiệu, không hành động. Tiếp tục quan sát và chờ đợi một tín hiệu rõ ràng hơn.",
+      "counter": "Việc thiếu tín hiệu không có nghĩa là an toàn; rủi ro tiềm ẩn từ thị trường chung vẫn tồn tại."
+    },
+    {
+      "ticker": "E1VFVN30",
+      "name": "Quy ETF DCVFMVN30",
+      "sector": "Tai chinh",
+      "exchange": "HSX",
+      "close_price": 33.18,
+      "change": "-0.12 | -0.36%",
+      "change_positive": false,
+      "signal": "No Clear Signal",
+      "analysis": "Phiên giao dịch không khớp với bất kỳ mẫu hình VSA rõ ràng nào. Các chỉ số O-H-L-C và Volume ở mức trung tính. Chỉ báo RSI (43.7) và MACD Hist (-0.22).",
+      "action": "Không có tín hiệu, không hành động. Tiếp tục quan sát và chờ đợi một tín hiệu rõ ràng hơn.",
+      "counter": "Việc thiếu tín hiệu không có nghĩa là an toàn; rủi ro tiềm ẩn từ thị trường chung vẫn tồn tại."
+    },
+    {
+      "ticker": "ELC",
+      "name": "CTCP Cong nghe-Vien thong ELCOM",
+      "sector": "Cong nghe",
+      "exchange": "HSX",
+      "close_price": 21.1,
+      "change": "-0.10 | -0.47%",
+      "change_positive": false,
+      "signal": "No Clear Signal",
+      "analysis": "Phiên giao dịch không khớp với bất kỳ mẫu hình VSA rõ ràng nào. Các chỉ số O-H-L-C và Volume ở mức trung tính. Chỉ báo RSI (46.1) và MACD Hist (0.02).",
+      "action": "Không có tín hiệu, không hành động. Tiếp tục quan sát và chờ đợi một tín hiệu rõ ràng hơn.",
+      "counter": "Việc thiếu tín hiệu không có nghĩa là an toàn; rủi ro tiềm ẩn từ thị trường chung vẫn tồn tại."
+    },
+    {
+      "ticker": "EVF",
+      "name": "Cong ty Tai chinh Co phan Dien luc",
+      "sector": "Tai chinh",
+      "exchange": "HSX",
+      "close_price": 12.6,
+      "change": "+0.00 | +0.00%",
+      "change_positive": false,
+      "signal": "Indecision Bar (Doji)",
+      "analysis": "Nến có thân nến rất hẹp (Doji), cho thấy sự do dự và cân bằng tạm thời giữa bên mua và bên bán. MACD Hist (-0.05) và RSI (42.0) cũng đang ở mức trung tính.",
+      "action": "Quan sát chặt chẽ. Nến Doji thường báo hiệu một sự thay đổi xu hướng sắp diễn ra, hoặc sự tiếp diễn yếu ớt. Chờ xác nhận từ nến tiếp theo.",
+      "counter": "Một nến Doji đơn lẻ không có nhiều ý nghĩa nếu không nằm ở vùng hỗ trợ/kháng cự quan trọng."
+    },
+    {
+      "ticker": "FUEVFVND",
+      "name": "Quy ETF DCVFMVN DIAMOND",
+      "sector": "Tai chinh",
+      "exchange": "HSX",
+      "close_price": 38.68,
+      "change": "-0.28 | -0.72%",
+      "change_positive": false,
+      "signal": "No Clear Signal",
+      "analysis": "Phiên giao dịch không khớp với bất kỳ mẫu hình VSA rõ ràng nào. Các chỉ số O-H-L-C và Volume ở mức trung tính. Chỉ báo RSI (46.4) và MACD Hist (-0.01).",
+      "action": "Không có tín hiệu, không hành động. Tiếp tục quan sát và chờ đợi một tín hiệu rõ ràng hơn.",
+      "counter": "Việc thiếu tín hiệu không có nghĩa là an toàn; rủi ro tiềm ẩn từ thị trường chung vẫn tồn tại."
+    },
+    {
+      "ticker": "GEE",
+      "name": "CTCP Dien luc Gelex",
+      "sector": "Cong nghiep",
+      "exchange": "OTC",
+      "close_price": 173.5,
+      "change": "+0.00 | +0.00%",
+      "change_positive": false,
+      "signal": "Indecision Bar (Doji)",
+      "analysis": "Nến có thân nến rất hẹp (Doji), cho thấy sự do dự và cân bằng tạm thời giữa bên mua và bên bán. MACD Hist (-2.36) và RSI (63.3) cũng đang ở mức trung tính.",
+      "action": "Quan sát chặt chẽ. Nến Doji thường báo hiệu một sự thay đổi xu hướng sắp diễn ra, hoặc sự tiếp diễn yếu ớt. Chờ xác nhận từ nến tiếp theo.",
+      "counter": "Một nến Doji đơn lẻ không có nhiều ý nghĩa nếu không nằm ở vùng hỗ trợ/kháng cự quan trọng."
+    },
+    {
+      "ticker": "GEG",
+      "name": "CTCP Dien Gia Lai",
+      "sector": "Cac dich vu ha tang",
+      "exchange": "HSX",
+      "close_price": 15.4,
+      "change": "+0.20 | +1.32%",
+      "change_positive": true,
+      "signal": "Normal Bar",
+      "analysis": "Phiên giao dịch diễn ra bình thường với khối lượng quanh mức trung bình (1.1x TB20). Không có tín hiệu VSA đặc biệt nào được ghi nhận.",
+      "action": "Tiếp tục quan sát. Hành động theo xu hướng chính của cổ phiếu và kỷ luật cá nhân.",
+      "counter": "Sự 'bình thường' này có thể là giai đoạn 'bình yên trước cơn bão', cần theo dõi chặt chẽ các phiên tiếp theo."
+    },
+    {
+      "ticker": "HAG",
+      "name": "CTCP Hoang Anh Gia Lai",
+      "sector": "Hang tieu dung",
+      "exchange": "HSX",
+      "close_price": 16.7,
+      "change": "-0.55 | -3.19%",
+      "change_positive": false,
+      "signal": "No Clear Signal",
+      "analysis": "Phiên giao dịch không khớp với bất kỳ mẫu hình VSA rõ ràng nào. Các chỉ số O-H-L-C và Volume ở mức trung tính. Chỉ báo RSI (53.7) và MACD Hist (0.09).",
+      "action": "Không có tín hiệu, không hành động. Tiếp tục quan sát và chờ đợi một tín hiệu rõ ràng hơn.",
+      "counter": "Việc thiếu tín hiệu không có nghĩa là an toàn; rủi ro tiềm ẩn từ thị trường chung vẫn tồn tại."
+    },
+    {
+      "ticker": "HAX",
+      "name": "CTCP Dich Vu O To Hang Xanh",
+      "sector": "Hang tieu dung",
+      "exchange": "HSX",
+      "close_price": 10.75,
+      "change": "-0.10 | -0.92%",
+      "change_positive": false,
+      "signal": "No Clear Signal",
+      "analysis": "Phiên giao dịch không khớp với bất kỳ mẫu hình VSA rõ ràng nào. Các chỉ số O-H-L-C và Volume ở mức trung tính. Chỉ báo RSI (42.5) và MACD Hist (0.13).",
+      "action": "Không có tín hiệu, không hành động. Tiếp tục quan sát và chờ đợi một tín hiệu rõ ràng hơn.",
+      "counter": "Việc thiếu tín hiệu không có nghĩa là an toàn; rủi ro tiềm ẩn từ thị trường chung vẫn tồn tại."
+    },
+    {
+      "ticker": "HHP",
+      "name": "CTCP HHP Global",
+      "sector": "Vat lieu co ban",
+      "exchange": "HSX",
+      "close_price": 12.1,
+      "change": "+0.10 | +0.83%",
+      "change_positive": true,
+      "signal": "No Clear Signal",
+      "analysis": "Phiên giao dịch không khớp với bất kỳ mẫu hình VSA rõ ràng nào. Các chỉ số O-H-L-C và Volume ở mức trung tính. Chỉ báo RSI (66.2) và MACD Hist (0.01).",
+      "action": "Không có tín hiệu, không hành động. Tiếp tục quan sát và chờ đợi một tín hiệu rõ ràng hơn.",
+      "counter": "Việc thiếu tín hiệu không có nghĩa là an toàn; rủi ro tiềm ẩn từ thị trường chung vẫn tồn tại."
+    },
+    {
+      "ticker": "HHS",
+      "name": "CTCP Dau tu dich vu Hoang Huy",
+      "sector": "Cong nghiep",
+      "exchange": "HSX",
+      "close_price": 14.7,
+      "change": "+0.00 | +0.00%",
+      "change_positive": false,
+      "signal": "Indecision Bar (Doji)",
+      "analysis": "Nến có thân nến rất hẹp (Doji), cho thấy sự do dự và cân bằng tạm thời giữa bên mua và bên bán. MACD Hist (-0.17) và RSI (38.4) cũng đang ở mức trung tính.",
+      "action": "Quan sát chặt chẽ. Nến Doji thường báo hiệu một sự thay đổi xu hướng sắp diễn ra, hoặc sự tiếp diễn yếu ớt. Chờ xác nhận từ nến tiếp theo.",
+      "counter": "Một nến Doji đơn lẻ không có nhiều ý nghĩa nếu không nằm ở vùng hỗ trợ/kháng cự quan trọng."
+    },
+    {
+      "ticker": "HSL",
+      "name": "CTCP Dau tu Phat trien Thuc pham Hong Ha",
+      "sector": "Hang tieu dung",
+      "exchange": "HSX",
+      "close_price": 9.97,
+      "change": "+0.65 | +6.97%",
+      "change_positive": true,
+      "signal": "No Clear Signal",
+      "analysis": "Phiên giao dịch không khớp với bất kỳ mẫu hình VSA rõ ràng nào. Các chỉ số O-H-L-C và Volume ở mức trung tính. Chỉ báo RSI (51.4) và MACD Hist (0.26).",
+      "action": "Không có tín hiệu, không hành động. Tiếp tục quan sát và chờ đợi một tín hiệu rõ ràng hơn.",
+      "counter": "Việc thiếu tín hiệu không có nghĩa là an toàn; rủi ro tiềm ẩn từ thị trường chung vẫn tồn tại."
+    },
+    {
+      "ticker": "HUT",
+      "name": "CTCP Tasco",
+      "sector": "Cong nghiep",
+      "exchange": "HNX",
+      "close_price": 18.2,
+      "change": "-0.10 | -0.55%",
+      "change_positive": false,
+      "signal": "No Clear Signal",
+      "analysis": "Phiên giao dịch không khớp với bất kỳ mẫu hình VSA rõ ràng nào. Các chỉ số O-H-L-C và Volume ở mức trung tính. Chỉ báo RSI (56.7) và MACD Hist (0.26).",
+      "action": "Không có tín hiệu, không hành động. Tiếp tục quan sát và chờ đợi một tín hiệu rõ ràng hơn.",
+      "counter": "Việc thiếu tín hiệu không có nghĩa là an toàn; rủi ro tiềm ẩn từ thị trường chung vẫn tồn tại."
+    },
+    {
+      "ticker": "HVN",
+      "name": "Tong Cong ty Hang khong Viet Nam-CTCP",
+      "sector": "Dich vu tieu dung",
+      "exchange": "HSX",
+      "close_price": 31.3,
+      "change": "-0.40 | -1.26%",
+      "change_positive": false,
+      "signal": "No Clear Signal",
+      "analysis": "Phiên giao dịch không khớp với bất kỳ mẫu hình VSA rõ ràng nào. Các chỉ số O-H-L-C và Volume ở mức trung tính. Chỉ báo RSI (39.2) và MACD Hist (-0.28).",
+      "action": "Không có tín hiệu, không hành động. Tiếp tục quan sát và chờ đợi một tín hiệu rõ ràng hơn.",
+      "counter": "Việc thiếu tín hiệu không có nghĩa là an toàn; rủi ro tiềm ẩn từ thị trường chung vẫn tồn tại."
+    },
+    {
+      "ticker": "HVX",
+      "name": "CTCP Xi mang Vicem Hai Van",
+      "sector": "Vat lieu co ban",
+      "exchange": "HSX",
+      "close_price": 9.47,
+      "change": "+0.01 | +0.11%",
+      "change_positive": true,
+      "signal": "No Clear Signal",
+      "analysis": "Phiên giao dịch không khớp với bất kỳ mẫu hình VSA rõ ràng nào. Các chỉ số O-H-L-C và Volume ở mức trung tính. Chỉ báo RSI (55.4) và MACD Hist (0.13).",
+      "action": "Không có tín hiệu, không hành động. Tiếp tục quan sát và chờ đợi một tín hiệu rõ ràng hơn.",
+      "counter": "Việc thiếu tín hiệu không có nghĩa là an toàn; rủi ro tiềm ẩn từ thị trường chung vẫn tồn tại."
+    },
+    {
+      "ticker": "HQC",
+      "name": "CTCP Tu van-Thuong mai-Dich vu Dia oc Hoang Quan",
+      "sector": "Tai chinh",
+      "exchange": "HSX",
+      "close_price": 2.51,
+      "change": "-0.01 | -0.40%",
+      "change_positive": false,
+      "signal": "Indecision Bar (Doji)",
+      "analysis": "Nến có thân nến rất hẹp (Doji), cho thấy sự do dự và cân bằng tạm thời giữa bên mua và bên bán. MACD Hist (-0.03) và RSI (46.0) cũng đang ở mức trung tính.",
+      "action": "Quan sát chặt chẽ. Nến Doji thường báo hiệu một sự thay đổi xu hướng sắp diễn ra, hoặc sự tiếp diễn yếu ớt. Chờ xác nhận từ nến tiếp theo.",
+      "counter": "Một nến Doji đơn lẻ không có nhiều ý nghĩa nếu không nằm ở vùng hỗ trợ/kháng cự quan trọng."
+    },
+    {
+      "ticker": "ITA",
+      "name": "CTCP Dau tu va Cong nghiep Tan Tao",
+      "sector": "Cong nghiep",
+      "exchange": "HSX",
+      "close_price": 7.03,
+      "change": "-0.01 | -0.14%",
+      "change_positive": false,
+      "signal": "No Clear Signal",
+      "analysis": "Phiên giao dịch không khớp với bất kỳ mẫu hình VSA rõ ràng nào. Các chỉ số O-H-L-C và Volume ở mức trung tính. Chỉ báo RSI (35.2) và MACD Hist (-0.09).",
+      "action": "Không có tín hiệu, không hành động. Tiếp tục quan sát và chờ đợi một tín hiệu rõ ràng hơn.",
+      "counter": "Việc thiếu tín hiệu không có nghĩa là an toàn; rủi ro tiềm ẩn từ thị trường chung vẫn tồn tại."
+    },
+    {
+      "ticker": "KDC",
+      "name": "CTCP Tap doan KIDO",
+      "sector": "Hang tieu dung",
+      "exchange": "HSX",
+      "close_price": 40.0,
+      "change": "-0.30 | -0.74%",
+      "change_positive": false,
+      "signal": "Normal Bar",
+      "analysis": "Phiên giao dịch diễn ra bình thường với khối lượng quanh mức trung bình (0.8x TB20). Không có tín hiệu VSA đặc biệt nào được ghi nhận.",
+      "action": "Tiếp tục quan sát. Hành động theo xu hướng chính của cổ phiếu và kỷ luật cá nhân.",
+      "counter": "Sự 'bình thường' này có thể là giai đoạn 'bình yên trước cơn bão', cần theo dõi chặt chẽ các phiên tiếp theo."
+    },
+    {
+      "ticker": "KDH",
+      "name": "CTCP Dau tu va Kinh doanh Nha Khang Dien",
+      "sector": "Tai chinh",
+      "exchange": "HSX",
+      "close_price": 34.1,
+      "change": "-0.85 | -2.43%",
+      "change_positive": false,
+      "signal": "No Clear Signal",
+      "analysis": "Phiên giao dịch không khớp với bất kỳ mẫu hình VSA rõ ràng nào. Các chỉ số O-H-L-C và Volume ở mức trung tính. Chỉ báo RSI (51.1) và MACD Hist (0.17).",
+      "action": "Không có tín hiệu, không hành động. Tiếp tục quan sát và chờ đợi một tín hiệu rõ ràng hơn.",
+      "counter": "Việc thiếu tín hiệu không có nghĩa là an toàn; rủi ro tiềm ẩn từ thị trường chung vẫn tồn tại."
+    },
+    {
+      "ticker": "KHP",
+      "name": "CTCP Dien luc Khanh Hoa",
+      "sector": "Cac dich vu ha tang",
+      "exchange": "HSX",
+      "close_price": 11.2,
+      "change": "+0.00 | +0.00%",
+      "change_positive": false,
+      "signal": "Normal Bar",
+      "analysis": "Phiên giao dịch diễn ra bình thường với khối lượng quanh mức trung bình (1.0x TB20). Không có tín hiệu VSA đặc biệt nào được ghi nhận.",
+      "action": "Tiếp tục quan sát. Hành động theo xu hướng chính của cổ phiếu và kỷ luật cá nhân.",
+      "counter": "Sự 'bình thường' này có thể là giai đoạn 'bình yên trước cơn bão', cần theo dõi chặt chẽ các phiên tiếp theo."
+    },
+    {
+      "ticker": "L14",
+      "name": "CTCP Licogi 14",
+      "sector": "Cong nghiep",
+      "exchange": "HNX",
+      "close_price": 30.0,
+      "change": "+0.00 | +0.00%",
+      "change_positive": false,
+      "signal": "No Clear Signal",
+      "analysis": "Phiên giao dịch không khớp với bất kỳ mẫu hình VSA rõ ràng nào. Các chỉ số O-H-L-C và Volume ở mức trung tính. Chỉ báo RSI (40.4) và MACD Hist (-0.20).",
+      "action": "Không có tín hiệu, không hành động. Tiếp tục quan sát và chờ đợi một tín hiệu rõ ràng hơn.",
+      "counter": "Việc thiếu tín hiệu không có nghĩa là an toàn; rủi ro tiềm ẩn từ thị trường chung vẫn tồn tại."
+    },
+    {
+      "ticker": "LAS",
+      "name": "CTCP Superphotphat va Hoa chat Lam Thao",
+      "sector": "Vat lieu co ban",
+      "exchange": "HNX",
+      "close_price": 18.0,
+      "change": "+0.00 | +0.00%",
+      "change_positive": false,
+      "signal": "Normal Bar",
+      "analysis": "Phiên giao dịch diễn ra bình thường với khối lượng quanh mức trung bình (0.8x TB20). Không có tín hiệu VSA đặc biệt nào được ghi nhận.",
+      "action": "Tiếp tục quan sát. Hành động theo xu hướng chính của cổ phiếu và kỷ luật cá nhân.",
+      "counter": "Sự 'bình thường' này có thể là giai đoạn 'bình yên trước cơn bão', cần theo dõi chặt chẽ các phiên tiếp theo."
+    },
+    {
+      "ticker": "LCG",
+      "name": "CTCP Lizen",
+      "sector": "Cong nghiep",
+      "exchange": "HSX",
+      "close_price": 9.92,
+      "change": "-0.01 | -0.10%",
+      "change_positive": false,
+      "signal": "Normal Bar",
+      "analysis": "Phiên giao dịch diễn ra bình thường với khối lượng quanh mức trung bình (0.8x TB20). Không có tín hiệu VSA đặc biệt nào được ghi nhận.",
+      "action": "Tiếp tục quan sát. Hành động theo xu hướng chính của cổ phiếu và kỷ luật cá nhân.",
+      "counter": "Sự 'bình thường' này có thể là giai đoạn 'bình yên trước cơn bão', cần theo dõi chặt chẽ các phiên tiếp theo."
+    },
+    {
+      "ticker": "LDG",
+      "name": "CTCP Dau tu LDG",
+      "sector": "Tai chinh",
+      "exchange": "HSX",
+      "close_price": 4.13,
+      "change": "-0.03 | -0.72%",
+      "change_positive": false,
+      "signal": "Indecision Bar (Doji)",
+      "analysis": "Nến có thân nến rất hẹp (Doji), cho thấy sự do dự và cân bằng tạm thời giữa bên mua và bên bán. MACD Hist (-0.02) và RSI (33.0) cũng đang ở mức trung tính.",
+      "action": "Quan sát chặt chẽ. Nến Doji thường báo hiệu một sự thay đổi xu hướng sắp diễn ra, hoặc sự tiếp diễn yếu ớt. Chờ xác nhận từ nến tiếp theo.",
+      "counter": "Một nến Doji đơn lẻ không có nhiều ý nghĩa nếu không nằm ở vùng hỗ trợ/kháng cự quan trọng."
+    },
+    {
+      "ticker": "LHG",
+      "name": "CTCP Long Hau",
+      "sector": "Tai chinh",
+      "exchange": "HSX",
+      "close_price": 31.7,
+      "change": "-0.40 | -1.25%",
+      "change_positive": false,
+      "signal": "Normal Bar",
+      "analysis": "Phiên giao dịch diễn ra bình thường với khối lượng quanh mức trung bình (0.9x TB20). Không có tín hiệu VSA đặc biệt nào được ghi nhận.",
+      "action": "Tiếp tục quan sát. Hành động theo xu hướng chính của cổ phiếu và kỷ luật cá nhân.",
+      "counter": "Sự 'bình thường' này có thể là giai đoạn 'bình yên trước cơn bão', cần theo dõi chặt chẽ các phiên tiếp theo."
+    },
+    {
+      "ticker": "LSS",
+      "name": "CTCP Mia duong Lam Son",
+      "sector": "Hang tieu dung",
+      "exchange": "HSX",
+      "close_price": 9.17,
+      "change": "-0.02 | -0.22%",
+      "change_positive": false,
+      "signal": "No Clear Signal",
+      "analysis": "Phiên giao dịch không khớp với bất kỳ mẫu hình VSA rõ ràng nào. Các chỉ số O-H-L-C và Volume ở mức trung tính. Chỉ báo RSI (46.4) và MACD Hist (0.01).",
+      "action": "Không có tín hiệu, không hành động. Tiếp tục quan sát và chờ đợi một tín hiệu rõ ràng hơn.",
+      "counter": "Việc thiếu tín hiệu không có nghĩa là an toàn; rủi ro tiềm ẩn từ thị trường chung vẫn tồn tại."
+    },
+    {
+      "ticker": "MCH",
+      "name": "CTCP Hang Tieu Dung Masan",
+      "sector": "Hang tieu dung",
+      "exchange": "UPCOM",
+      "close_price": 105.0,
+      "change": "+0.00 | +0.00%",
+      "change_positive": false,
+      "signal": "Indecision Bar (Doji)",
+      "analysis": "Nến có thân nến rất hẹp (Doji), cho thấy sự do dự và cân bằng tạm thời giữa bên mua và bên bán. MACD Hist (-1.11) và RSI (55.5) cũng đang ở mức trung tính.",
+      "action": "Quan sát chặt chẽ. Nến Doji thường báo hiệu một sự thay đổi xu hướng sắp diễn ra, hoặc sự tiếp diễn yếu ớt. Chờ xác nhận từ nến tiếp theo.",
+      "counter": "Một nến Doji đơn lẻ không có nhiều ý nghĩa nếu không nằm ở vùng hỗ trợ/kháng cự quan trọng."
+    },
+    {
+      "ticker": "MIG",
+      "name": "Tong CTCP Bao hiem Quan doi",
+      "sector": "Tai chinh",
+      "exchange": "HSX",
+      "close_price": 13.7,
+      "change": "-0.10 | -0.72%",
+      "change_positive": false,
+      "signal": "Indecision Bar (Doji)",
+      "analysis": "Nến có thân nến rất hẹp (Doji), cho thấy sự do dự và cân bằng tạm thời giữa bên mua và bên bán. MACD Hist (-0.14) và RSI (42.0) cũng đang ở mức trung tính.",
+      "action": "Quan sát chặt chẽ. Nến Doji thường báo hiệu một sự thay đổi xu hướng sắp diễn ra, hoặc sự tiếp diễn yếu ớt. Chờ xác nhận từ nến tiếp theo.",
+      "counter": "Một nến Doji đơn lẻ không có nhiều ý nghĩa nếu không nằm ở vùng hỗ trợ/kháng cự quan trọng."
+    },
+    {
+      "ticker": "MSR",
+      "name": "CTCP Tai nguyen Masan",
+      "sector": "Vat lieu co ban",
+      "exchange": "UPCOM",
+      "close_price": 10.1,
+      "change": "+0.00 | +0.00%",
+      "change_positive": false,
+      "signal": "Normal Bar",
+      "analysis": "Phiên giao dịch diễn ra bình thường với khối lượng quanh mức trung bình (1.0x TB20). Không có tín hiệu VSA đặc biệt nào được ghi nhận.",
+      "action": "Tiếp tục quan sát. Hành động theo xu hướng chính của cổ phiếu và kỷ luật cá nhân.",
+      "counter": "Sự 'bình thường' này có thể là giai đoạn 'bình yên trước cơn bão', cần theo dõi chặt chẽ các phiên tiếp theo."
+    },
+    {
+      "ticker": "NT2",
+      "name": "CTCP Dien luc Dau khi Nhon Trach 2",
+      "sector": "Cac dich vu ha tang",
+      "exchange": "HSX",
+      "close_price": 27.55,
+      "change": "-0.15 | -0.54%",
+      "change_positive": false,
+      "signal": "No Clear Signal",
+      "analysis": "Phiên giao dịch không khớp với bất kỳ mẫu hình VSA rõ ràng nào. Các chỉ số O-H-L-C và Volume ở mức trung tính. Chỉ báo RSI (46.8) và MACD Hist (-0.05).",
+      "action": "Không có tín hiệu, không hành động. Tiếp tục quan sát và chờ đợi một tín hiệu rõ ràng hơn.",
+      "counter": "Việc thiếu tín hiệu không có nghĩa là an toàn; rủi ro tiềm ẩn từ thị trường chung vẫn tồn tại."
+    },
+    {
+      "ticker": "NTL",
+      "name": "CTCP Phat trien Do thi Tu Liem",
+      "sector": "Tai chinh",
+      "exchange": "HSX",
+      "close_price": 31.85,
+      "change": "-0.05 | -0.16%",
+      "change_positive": false,
+      "signal": "No Clear Signal",
+      "analysis": "Phiên giao dịch không khớp với bất kỳ mẫu hình VSA rõ ràng nào. Các chỉ số O-H-L-C và Volume ở mức trung tính. Chỉ báo RSI (50.5) và MACD Hist (0.33).",
+      "action": "Không có tín hiệu, không hành động. Tiếp tục quan sát và chờ đợi một tín hiệu rõ ràng hơn.",
+      "counter": "Việc thiếu tín hiệu không có nghĩa là an toàn; rủi ro tiềm ẩn từ thị trường chung vẫn tồn tại."
+    },
+    {
+      "ticker": "ORS",
+      "name": "CTCP Chung khoan Tien Phong",
+      "sector": "Tai chinh",
+      "exchange": "HSX",
+      "close_price": 14.9,
+      "change": "-0.10 | -0.67%",
+      "change_positive": false,
+      "signal": "No Clear Signal",
+      "analysis": "Phiên giao dịch không khớp với bất kỳ mẫu hình VSA rõ ràng nào. Các chỉ số O-H-L-C và Volume ở mức trung tính. Chỉ báo RSI (41.4) và MACD Hist (0.00).",
+      "action": "Không có tín hiệu, không hành động. Tiếp tục quan sát và chờ đợi một tín hiệu rõ ràng hơn.",
+      "counter": "Việc thiếu tín hiệu không có nghĩa là an toàn; rủi ro tiềm ẩn từ thị trường chung vẫn tồn tại."
+    },
+    {
+      "ticker": "PAN",
+      "name": "CTCP Tap doan PAN",
+      "sector": "Hang tieu dung",
+      "exchange": "HSX",
+      "close_price": 27.2,
+      "change": "-0.05 | -0.18%",
+      "change_positive": false,
+      "signal": "No Clear Signal",
+      "analysis": "Phiên giao dịch không khớp với bất kỳ mẫu hình VSA rõ ràng nào. Các chỉ số O-H-L-C và Volume ở mức trung tính. Chỉ báo RSI (46.0) và MACD Hist (-0.05).",
+      "action": "Không có tín hiệu, không hành động. Tiếp tục quan sát và chờ đợi một tín hiệu rõ ràng hơn.",
+      "counter": "Việc thiếu tín hiệu không có nghĩa là an toàn; rủi ro tiềm ẩn từ thị trường chung vẫn tồn tại."
+    },
+    {
+      "ticker": "PET",
+      "name": "Tong CTCP Dich vu Tong hop Dau khi",
+      "sector": "Dich vu tieu dung",
+      "exchange": "HSX",
+      "close_price": 21.0,
+      "change": "+0.00 | +0.00%",
+      "change_positive": false,
+      "signal": "Indecision Bar (Doji)",
+      "analysis": "Nến có thân nến rất hẹp (Doji), cho thấy sự do dự và cân bằng tạm thời giữa bên mua và bên bán. MACD Hist (-0.17) và RSI (47.3) cũng đang ở mức trung tính.",
+      "action": "Quan sát chặt chẽ. Nến Doji thường báo hiệu một sự thay đổi xu hướng sắp diễn ra, hoặc sự tiếp diễn yếu ớt. Chờ xác nhận từ nến tiếp theo.",
+      "counter": "Một nến Doji đơn lẻ không có nhiều ý nghĩa nếu không nằm ở vùng hỗ trợ/kháng cự quan trọng."
+    },
+    {
+      "ticker": "PHR",
+      "name": "CTCP Cao su Phuoc Hoa",
+      "sector": "Vat lieu co ban",
+      "exchange": "HSX",
+      "close_price": 63.8,
+      "change": "+0.10 | +0.16%",
+      "change_positive": true,
+      "signal": "Indecision Bar (Doji)",
+      "analysis": "Nến có thân nến rất hẹp (Doji), cho thấy sự do dự và cân bằng tạm thời giữa bên mua và bên bán. MACD Hist (0.42) và RSI (55.4) cũng đang ở mức trung tính.",
+      "action": "Quan sát chặt chẽ. Nến Doji thường báo hiệu một sự thay đổi xu hướng sắp diễn ra, hoặc sự tiếp diễn yếu ớt. Chờ xác nhận từ nến tiếp theo.",
+      "counter": "Một nến Doji đơn lẻ không có nhiều ý nghĩa nếu không nằm ở vùng hỗ trợ/kháng cự quan trọng."
+    },
+    {
+      "ticker": "PME",
+      "name": "CTCP Pymepharco",
+      "sector": "Y te",
+      "exchange": "HSX",
+      "close_price": 50.8,
+      "change": "+0.00 | +0.00%",
+      "change_positive": false,
+      "signal": "No Clear Signal",
+      "analysis": "Phiên giao dịch không khớp với bất kỳ mẫu hình VSA rõ ràng nào. Các chỉ số O-H-L-C và Volume ở mức trung tính. Chỉ báo RSI (59.2) và MACD Hist (0.13).",
+      "action": "Không có tín hiệu, không hành động. Tiếp tục quan sát và chờ đợi một tín hiệu rõ ràng hơn.",
+      "counter": "Việc thiếu tín hiệu không có nghĩa là an toàn; rủi ro tiềm ẩn từ thị trường chung vẫn tồn tại."
+    },
+    {
+      "ticker": "PVB",
+      "name": "CTCP Boc ong Dau khi Viet Nam",
+      "sector": "Dau khi",
+      "exchange": "HNX",
+      "close_price": 27.5,
+      "change": "-0.20 | -0.72%",
+      "change_positive": false,
+      "signal": "Normal Bar",
+      "analysis": "Phiên giao dịch diễn ra bình thường với khối lượng quanh mức trung bình (0.9x TB20). Không có tín hiệu VSA đặc biệt nào được ghi nhận.",
+      "action": "Tiếp tục quan sát. Hành động theo xu hướng chính của cổ phiếu và kỷ luật cá nhân.",
+      "counter": "Sự 'bình thường' này có thể là giai đoạn 'bình yên trước cơn bão', cần theo dõi chặt chẽ các phiên tiếp theo."
+    },
+    {
+      "ticker": "PVC",
+      "name": "Tong CTCP Hoa chat va Dich vu Dau khi",
+      "sector": "Dau khi",
+      "exchange": "HNX",
+      "close_price": 10.9,
+      "change": "+0.00 | +0.00%",
+      "change_positive": false,
+      "signal": "Indecision Bar (Doji)",
+      "analysis": "Nến có thân nến rất hẹp (Doji), cho thấy sự do dự và cân bằng tạm thời giữa bên mua và bên bán. MACD Hist (-0.11) và RSI (37.9) cũng đang ở mức trung tính.",
+      "action": "Quan sát chặt chẽ. Nến Doji thường báo hiệu một sự thay đổi xu hướng sắp diễn ra, hoặc sự tiếp diễn yếu ớt. Chờ xác nhận từ nến tiếp theo.",
+      "counter": "Một nến Doji đơn lẻ không có nhiều ý nghĩa nếu không nằm ở vùng hỗ.
+    }
+   ]
+};
+
+/**
+     * DỮ LIỆU THUẬT NGỮ VSA/PTKT (CSV đã được chuyển đổi)
+     * Đây là dữ liệu lấy từ file CSV bạn đã cung cấp.
+     */
+    const glossaryData = [
+        {"term": "VSA", "full_name": "Volume Spread Analysis", "description": "Phân tích Chênh lệch Khối lượng. Tập trung vào (1) Spread, (2) Volume, và (3) Giá đóng cửa để hiểu 'dòng tiền thông minh'.", "category": "TERM"},
+        {"term": "Wyckoff", "full_name": "Phương pháp Wyckoff", "description": "Phương pháp luận phân tích thị trường toàn diện. VSA là một phần ứng dụng quan trọng của Wyckoff.", "category": "TERM"},
+        {"term": "Wyckoff Phases", "full_name": "Các Giai đoạn Tích lũy/Phân phối", "description": "Các Giai đoạn (A, B, C, D, E) theo phương pháp Wyckoff.", "category": "TERM"},
+        {"term": "SOS", "full_name": "Sign of Strength", "description": "Dấu hiệu Sức mạnh (Tín hiệu tiềm năng tăng giá).", "category": "TERM"},
+        {"term": "SOW", "full_name": "Sign of Weakness", "description": "Dấu hiệu Yếu kém (Tín hiệu tiềm năng giảm giá).", "category": "TERM"},
+        {"term": "Spread (VSA)", "full_name": "Biên độ nến", "description": "Chênh lệch giữa giá cao nhất (High) và giá thấp nhất (Low) trong phiên. Spread 'rộng' cho thấy biến động lớn.", "category": "TERM"},
+        {"term": "Upthrust (UTAD)", "full_name": "Phá vỡ Giả (lên trên)", "description": "Phiên tăng điểm, phá vỡ đỉnh cũ, nhưng bị bán ngược và đóng cửa ở nửa dưới nến, với khối lượng cao. Là 'bẫy tăng giá' [WEAKNESS].", "category": "TERM"},
+        {"term": "Down Thrust", "full_name": "Down Thrust / Bottom Reversal", "description": "Thanh giá giảm sâu trong phiên nhưng rút chân mạnh, khối lượng cao [STRENGTH].", "category": "TERM"},
+        {"term": "No Demand", "full_name": "Thiếu Cầu", "description": "Phiên tăng điểm (yếu), spread hẹp, với khối lượng rất thấp. Cho thấy đà tăng không bền vững vì thiếu lực cầu [WEAKNESS].", "category": "TERM"},
+        {"term": "Effort to Fall", "full_name": "Nỗ lực Giảm giá", "description": "Phiên giảm điểm, spread rộng, đóng cửa gần mức thấp nhất, đi kèm khối lượng cao. Xác nhận lực bán áp đảo [WEAKNESS].", "category": "TERM"},
+        {"term": "Breakdown", "full_name": "Phá vỡ (Hỗ trợ)", "description": "Hành động giá giảm xuống dưới một vùng hỗ trợ. 'Effort to Fall' là tín hiệu xác nhận cho cú 'Breakdown' [WEAKNESS].", "category": "TERM"},
+        {"term": "Buying Climax", "full_name": "Cao trào Mua", "description": "Phiên tăng điểm rất mạnh, spread cực rộng, khối lượng siêu cao, nhưng giá không đóng cửa ở mức cao nhất (bị bán ngược). Cảnh báo đỉnh ngắn hạn [WEAKNESS].", "category": "TERM"},
+        {"term": "Selling Climax", "full_name": "Cao trào Bán", "description": "Thanh giá giảm mạnh, spread rộng, khối lượng cực cao (cao trào bán) [STRENGTH].", "category": "TERM"},
+        {"term": "Indecision Bar / Doji", "full_name": "Nến Do dự / Nến Doji", "description": "Nến có thân rất hẹp, thể hiện sự thiếu quyết đoán của thị trường [OBSERVE].", "category": "TERM"},
+        {"term": "Test for Supply (No Supply)", "full_name": "Kiểm tra Lực Cung", "description": "Nến giảm điểm với spread hẹp và khối lượng rất thấp, cho thấy áp lực bán đã cạn kiệt. Thường là tín hiệu trước khi tăng giá [STRENGTH].", "category": "TERM"},
+        {"term": "Stopping Volume", "full_name": "Khối lượng Dừng/Hấp thụ", "description": "Nến giảm điểm với khối lượng cực cao nhưng đóng cửa ở giữa nến, cho thấy lực cầu lớn đã hấp thụ lực bán mạnh [STRENGTH].", "category": "TERM"},
+        {"term": "Effort to Rise (Breakout)", "full_name": "Nỗ lực Tăng giá", "description": "Nến tăng điểm mạnh, spread rộng, đóng cửa gần mức cao nhất, với khối lượng cao. Xác nhận phe mua đang áp đảo [STRENGTH].", "category": "TERM"},
+        {"term": "Mua", "full_name": "Hành động MUA", "description": "Các cổ phiếu được khuyến nghị 'Mua', 'Mua thăm dò', hoặc 'Gia tăng tỷ trọng'.", "category": "ACTION"},
+        {"term": "Bán", "full_name": "Hành động BÁN", "description": "Các cổ phiếu được khuyến nghị 'Bán', 'Chốt lời', hoặc 'Hạ tỷ trọng'.", "category": "ACTION"},
+        {"term": "Quan sát", "full_name": "Hành động QUAN SÁT", "description": "Các cổ phiếu được khuyến nghị 'Đứng ngoài và quan sát' hoặc 'Tiếp tục nắm giữ'.", "category": "ACTION"}
+    ];
+
+
+    // ##################################################################
+    // BƯỚC 2: CÁC HÀM TIỆN ÍCH
+    // ##################################################################
+    
+    /**
+     * Hàm chuyển đổi chuỗi sang dạng không dấu, không hoa để tìm kiếm
+     * @param {string} str - Chuỗi cần chuyển đổi
+     */
+    function removeDiacritics(str) {
+        return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    }
+
+    /**
+     * Hàm tạo HTML cho thẻ cổ phiếu mini
+     * @param {object} item - Đối tượng cổ phiếu
+     * @param {string} type - Loại danh mục ('strength', 'weakness', 'observe', 'search')
+     * @param {number} index - Chỉ số trong danh sách
+     */
+    function createTickerCardMini(item, type, index) {
+        const changeClass = item.change_positive ? 'positive' : (item.change.startsWith('+0.00') ? 'neutral' : 'negative');
+        let dataIndex = `${type}-${index}`;
+        
+        // Đặc biệt xử lý cho kết quả tìm kiếm Thuật ngữ/Hành động
+        if (item.category && (item.category === 'TERM' || item.category === 'ACTION')) {
+            const resultTypeClass = item.category === 'TERM' ? 'term' : 'stock'; // Tạm dùng 'stock' cho ACTION để không bị lỗi class
+            let termHtml = `<div class="search-result-item" data-term="${item.term}">
+                                <div class="result-info">
+                                    <span class="result-title">${item.term}</span>
+                                    <p style="font-size: 0.9em; margin: 2px 0; color: var(--text-secondary);">${item.description.substring(0, 50)}...</p>
+                                </div>
+                                <span class="result-type ${resultTypeClass}">${item.category === 'TERM' ? 'THUẬT NGỮ' : 'HÀNH ĐỘNG'}</span>
+                            </div>`;
+            return termHtml;
+        }
+
+        // Tạo HTML cho cổ phiếu
+        return `
+            <div class="ticker-card-mini" data-type="${type}" data-index="${index}">
+                <div class="info">
+                    <h4>${item.ticker}</h4>
+                    <p>${item.name} | ${item.signal}</p>
+                </div>
+                <div class="change ${changeClass}">${item.close_price.toLocaleString('vi-VN')} (${item.change.split(' | ')[1]})</div>
+            </div>
+        `;
+    }
+
+    /**
+     * Hàm tạo HTML cho phần chi tiết cổ phiếu
+     * @param {object} item - Đối tượng cổ phiếu
+     */
+    function createDetailViewHtml(item) {
+        const changeClass = item.change_positive ? 'positive' : (item.change.startsWith('+0.00') ? 'neutral' : 'negative');
+        const priceChange = item.change.split(' | ');
+        const signalColor = item.action.includes('mua') || item.action.includes('Nắm giữ') ? 'var(--color-green-dark)' : 
+                            item.action.includes('bán') || item.action.includes('chốt lời') || item.action.includes('Thoát vị thế') ? 'var(--color-red-dark)' : 'var(--color-medium-cyan)';
+
+        return `
+            <div class="detail-header">
+                <h2>${item.ticker} <span style="font-size: 0.7em; color: var(--text-secondary); font-weight: 400;">(${item.exchange})</span></h2>
+                <p>${item.name} (${item.sector})</p>
+            </div>
+            <div class="detail-market">
+                <div class="price">
+                    Giá Đóng Cửa: ${item.close_price.toLocaleString('vi-VN')}
+                </div>
+                <div class="change ${changeClass}">
+                    ${priceChange[0]} (${priceChange[1]})
+                </div>
+            </div>
+            <div class="detail-analysis">
+                <h3>📌 Tín hiệu VSA: ${item.signal}</h3>
+                <p>${item.analysis}</p>
+                
+                <h3 style="border-left-color: ${signalColor};">🎯 Hành động Khuyến nghị</h3>
+                <p><strong>${item.action}</strong></p>
+
+                <h3 style="border-left-color: var(--color-yellow-neutral);">⚖️ Lưu ý Rủi ro/Đối lập</h3>
+                <p>${item.counter}</p>
+            </div>
+        `;
+    }
+    
+    /**
+     * Hàm hiển thị chi tiết cổ phiếu mặc định (để hiển thị Glossary)
+     */
+    function setDefaultDetailView() {
+        const detailView = document.getElementById('detail-view');
+        detailView.innerHTML = `
+            <div class="default-message">
+                <h2>Chào mừng đến với Radar Cổ Phiếu VSA</h2>
+                <p>Chọn một mã cổ phiếu ở bên trái để xem chi tiết phân tích.</p>
+                <p>Hoặc sử dụng tab **Tra Cứu** để tìm kiếm nhanh theo Mã cổ phiếu, Tín hiệu VSA (SOS, Upthrust), hoặc Hành động (Mua/Bán).</p>
+                <p><i class="fas fa-chart-line"></i></p>
+            </div>
+        `;
+    }
+
+    // ##################################################################
+    // BƯỚC 3: HÀM KHỞI TẠO & XỬ LÝ SỰ KIỆN CƠ BẢN
+    // ##################################################################
+
+    let allTickers = []; // Mảng chứa tất cả cổ phiếu để dễ tìm kiếm
+
+    /**
+     * Hàm khởi tạo dữ liệu và giao diện
+     */
+    function initializeApp() {
+        const categories = ['strength', 'weakness', 'observe'];
+
+        // Cập nhật ngày tháng và đếm tổng hợp
+        document.getElementById('current-date').textContent = `Ngày hiện tại: ${new Date().toLocaleDateString('vi-VN')}`;
+        document.getElementById('update-date').textContent = `Ngày cập nhật: ${analysisData.last_updated}`;
+        
+        let totalStrength = 0;
+        let totalWeakness = 0;
+        let totalObserve = 0;
+
+        // Xử lý và hiển thị danh sách
+        categories.forEach(type => {
+            const listElement = document.getElementById(`${type}-list`);
+            const data = analysisData[type] || [];
+            
+            // Thêm type vào dữ liệu trước khi đẩy vào allTickers
+            data.forEach(item => item.categoryType = type);
+            allTickers.push(...data); 
+
+            listElement.innerHTML = data.map((item, index) => 
+                createTickerCardMini(item, type, index)
+            ).join('');
+
+            // Cập nhật số lượng
+            if (type === 'strength') totalStrength = data.length;
+            if (type === 'weakness') totalWeakness = data.length;
+            if (type === 'observe') totalObserve = data.length;
+        });
+
+        // Cập nhật số lượng hiển thị trên Summary
+        document.querySelector('#strength-count p').textContent = `${totalStrength} mã`;
+        document.querySelector('#weakness-count p').textContent = `${totalWeakness} mã`;
+        document.querySelector('#observe-count p').textContent = `${totalObserve} mã`;
+
+        // Gán sự kiện cho các thẻ cổ phiếu
+        document.querySelectorAll('.ticker-card-mini').forEach(card => {
+            card.addEventListener('click', function() {
+                const type = this.getAttribute('data-type');
+                const index = parseInt(this.getAttribute('data-index'));
+                const item = analysisData[type][index];
+                
+                // Hiển thị chi tiết
+                document.getElementById('detail-view').innerHTML = createDetailViewHtml(item);
+
+                // Xóa trạng thái active của tất cả các thẻ
+                document.querySelectorAll('.ticker-card-mini').forEach(c => c.classList.remove('active'));
+                document.querySelectorAll('.search-result-item').forEach(c => c.classList.remove('active'));
+
+                // Thiết lập trạng thái active cho thẻ được click
+                this.classList.add('active');
+            });
+        });
+
+        // Gán sự kiện cho Tab
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', function() {
+                // Xử lý chuyển tab
+                document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                document.getElementById(this.getAttribute('data-tab') + '-content').classList.add('active');
+
+                // Xóa active khỏi danh sách cổ phiếu khi chuyển tab
+                document.querySelectorAll('.ticker-card-mini').forEach(c => c.classList.remove('active'));
+                document.querySelectorAll('.search-result-item').forEach(c => c.classList.remove('active'));
+
+                // Nếu chuyển sang tab khác tab Tra Cứu, hiển thị chi tiết mặc định
+                if (this.getAttribute('data-tab') !== 'search') {
+                    setDefaultDetailView();
+                }
+            });
+        });
+
+        // Hiển thị giao diện chi tiết mặc định ban đầu (glossary)
+        setDefaultDetailView();
+    }
+
+
+    // ##################################################################
+    // BƯỚC 4: HÀM XỬ LÝ TÌM KIẾM (ĐÃ CHỈNH SỬA)
+    // ##################################################################
+
+    /**
+     * Hàm xử lý logic tìm kiếm tổng quát
+     */
+    function handleSearch() {
+        const searchInput = document.getElementById('universal-search');
+        const searchResultsList = document.getElementById('search-results-list');
+        const noResultsMessage = document.getElementById('no-results-message');
+        const query = removeDiacritics(searchInput.value.trim()); // Chuẩn hóa từ khóa
+
+        searchResultsList.innerHTML = '';
+        
+        if (query.length < 2) {
+            noResultsMessage.classList.add('hidden');
+            return; // Không tìm kiếm nếu từ khóa quá ngắn
+        }
+        
+        // --- 1. TÌM KIẾM CỔ PHIẾU ---
+        const filteredTickers = allTickers.filter(item => {
+            const normalizedTicker = removeDiacritics(item.ticker);
+            const normalizedName = removeDiacritics(item.name);
+            const normalizedSignal = removeDiacritics(item.signal);
+            const normalizedAction = removeDiacritics(item.action);
+
+            return normalizedTicker.includes(query) || 
+                   normalizedName.includes(query) || 
+                   normalizedSignal.includes(query) ||
+                   normalizedAction.includes(query);
+        });
+
+        // --- 2. TÌM KIẾM THUẬT NGỮ/HÀNH ĐỘNG ---
+        const filteredGlossary = glossaryData.filter(item => {
+            const normalizedTerm = removeDiacritics(item.term);
+            const normalizedFullName = removeDiacritics(item.full_name);
+            const normalizedDescription = removeDiacritics(item.description);
+
+            return normalizedTerm.includes(query) || 
+                   normalizedFullName.includes(query) || 
+                   normalizedDescription.includes(query);
+        });
+
+        // --- 3. GỘP VÀ HIỂN THỊ KẾT QUẢ ---
+        let resultsHtml = '';
+        
+        // Hiển thị kết quả Thuật ngữ/Hành động trước
+        filteredGlossary.forEach(item => {
+            // Thay vì dùng createTickerCardMini, chúng ta tạo một thẻ kết quả tìm kiếm riêng biệt
+            const resultTypeClass = item.category === 'TERM' ? 'term' : 'stock';
+            resultsHtml += `
+                <div class="search-result-item" data-term="${item.term}" data-category="${item.category}">
+                    <div class="result-info">
+                        <span class="result-title">${item.term}</span>
+                        <p style="font-size: 0.9em; margin: 2px 0; color: var(--text-secondary);">${item.description}</p>
+                    </div>
+                    <span class="result-type ${resultTypeClass}">${item.category === 'TERM' ? 'THUẬT NGỮ' : 'HÀNH ĐỘNG'}</span>
+                </div>
+            `;
+        });
+
+        // Hiển thị kết quả Cổ phiếu
+        filteredTickers.forEach((item, index) => {
+            const changeClass = item.change_positive ? 'positive' : (item.change.startsWith('+0.00') ? 'neutral' : 'negative');
+            resultsHtml += `
+                <div class="search-result-item" data-type="${item.categoryType}" data-index="${allTickers.findIndex(t => t.ticker === item.ticker)}">
+                    <div class="result-info">
+                        <span class="result-title">${item.ticker}</span>
+                        <p style="font-size: 0.9em; margin: 2px 0; color: var(--text-secondary);">${item.name} (${item.signal})</p>
+                    </div>
+                    <span class="result-action ${item.action.includes('mua') ? 'action-buy' : item.action.includes('bán') || item.action.includes('chốt lời') ? 'action-sell' : 'action-hold'}">${item.action.split('.')[0]}</span>
+                </div>
+            `;
+        });
+        
+        searchResultsList.innerHTML = resultsHtml;
+
+        // Cập nhật thông báo
+        if (filteredTickers.length === 0 && filteredGlossary.length === 0) {
+            noResultsMessage.classList.remove('hidden');
+        } else {
+            noResultsMessage.classList.add('hidden');
+        }
+        
+        // Gán lại sự kiện click cho các kết quả tìm kiếm (cả cổ phiếu và thuật ngữ)
+        document.querySelectorAll('.search-result-item').forEach(card => {
+            card.addEventListener('click', function() {
+                // Xóa active khỏi tất cả các thẻ
+                document.querySelectorAll('.ticker-card-mini').forEach(c => c.classList.remove('active'));
+                document.querySelectorAll('.search-result-item').forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+
+                const type = this.getAttribute('data-type');
+                const index = parseInt(this.getAttribute('data-index'));
+                const category = this.getAttribute('data-category');
+                
+                const detailView = document.getElementById('detail-view');
+
+                if (category === 'TERM' || category === 'ACTION') {
+                    // Hiển thị chi tiết Thuật ngữ/Hành động
+                    const term = this.getAttribute('data-term');
+                    const termData = glossaryData.find(t => t.term === term);
+                    if (termData) {
+                        detailView.innerHTML = `
+                            <div class="detail-header">
+                                <h2>${termData.term} <span style="font-size: 0.7em; color: var(--text-secondary); font-weight: 400;">(${termData.full_name})</span></h2>
+                                <p>${category === 'TERM' ? 'THUẬT NGỮ VSA' : 'NHÓM HÀNH ĐỘNG'}</p>
+                            </div>
+                            <div class="detail-analysis">
+                                <h3>💡 Diễn giải</h3>
+                                <p>${termData.description}</p>
+                                ${category === 'ACTION' ? '<h3>Danh sách Cổ phiếu liên quan</h3><div id="action-related-tickers"></div>' : ''}
+                            </div>
+                        `;
+                        
+                        // Nếu là Hành động, hiển thị danh sách cổ phiếu chi tiết
+                        if (category === 'ACTION') {
+                            displayActionRelatedTickers(termData.term);
+                        }
+                    }
+                } else if (type && !isNaN(index)) {
+                    // Hiển thị chi tiết Cổ phiếu
+                    const item = allTickers.find((t, i) => i === index); // Tìm theo index trong mảng allTickers
+                    if (item) {
+                        document.getElementById('detail-view').innerHTML = createDetailViewHtml(item);
+                    }
+                }
+            });
+        });
+    }
+
+    /**
+     * Hàm hiển thị danh sách cổ phiếu liên quan khi click vào Hành động
+     * @param {string} actionTerm - Từ khóa Hành động (Mua, Bán, Quan sát)
+     */
+    function displayActionRelatedTickers(actionTerm) {
+        const relatedListDiv = document.getElementById('action-related-tickers');
+        if (!relatedListDiv) return;
+
+        // Lọc cổ phiếu theo Hành động (lọc không dấu, không hoa)
+        const normalizedActionTerm = removeDiacritics(actionTerm);
+        const relatedTickers = allTickers.filter(item => 
+            removeDiacritics(item.action).includes(normalizedActionTerm)
+        );
+
+        if (relatedTickers.length === 0) {
+            relatedListDiv.innerHTML = '<p>Không có cổ phiếu nào được phân loại theo hành động này.</p>';
+            return;
+        }
+
+        let html = '<div style="max-height: 400px; overflow-y: auto; border: 1px solid #eee; border-radius: 6px;">';
+        relatedTickers.forEach(item => {
+            const changeClass = item.change_positive ? 'positive' : (item.change.startsWith('+0.00') ? 'neutral' : 'negative');
+            html += `
+                <div class="ticker-card-mini related-ticker" 
+                     data-ticker="${item.ticker}" 
+                     data-category-type="${item.categoryType}"
+                     style="padding: 10px 15px; border-bottom: 1px solid #f0f0f0; cursor: pointer;">
+                    <div class="info">
+                        <h4 style="margin-bottom: 3px;">${item.ticker}</h4>
+                        <p style="font-size: 0.85em; color: var(--text-secondary);">${item.name} | ${item.signal}</p>
+                    </div>
+                    <div class="change ${changeClass}">${item.close_price.toLocaleString('vi-VN')} (${item.change.split(' | ')[1]})</div>
+                </div>
+            `;
+        });
+        html += '</div>';
+        relatedListDiv.innerHTML = html;
+
+        // Gán sự kiện click để xem chi tiết cổ phiếu
+        document.querySelectorAll('.related-ticker').forEach(card => {
+            card.addEventListener('click', function(e) {
+                e.stopPropagation(); // Ngăn chặn sự kiện nổi bọt
+                const ticker = this.getAttribute('data-ticker');
+                const item = allTickers.find(t => t.ticker === ticker);
+                
+                if (item) {
+                    document.getElementById('detail-view').innerHTML = createDetailViewHtml(item);
+                    
+                    // Xóa trạng thái active của tất cả các thẻ (cả danh sách chính và tìm kiếm)
+                    document.querySelectorAll('.ticker-card-mini').forEach(c => c.classList.remove('active'));
+                    document.querySelectorAll('.search-result-item').forEach(c => c.classList.remove('active'));
+                    
+                    // Thẻ đang được click (nếu nó là trong kết quả tìm kiếm) cần được active
+                    const searchResultCard = document.querySelector(`.search-result-item[data-ticker="${ticker}"]`);
+                    if(searchResultCard) {
+                         searchResultCard.classList.add('active');
+                    }
+                    // Nếu nó là trong danh sách chính, cũng active nó (tùy chọn)
+                    const mainListCard = document.querySelector(`.ticker-card-mini[data-ticker="${ticker}"]`);
+                    if(mainListCard) {
+                         mainListCard.classList.add('active');
+                    }
+                }
+            });
+        });
+    }
+    
+    // ##################################################################
+    // BƯỚC 5: GỌI HÀM KHỞI TẠO VÀ GẮN SỰ KIỆN TÌM KIẾM
+    // ##################################################################
+
+    // Gắn sự kiện khi DOM đã tải xong
+    document.addEventListener('DOMContentLoaded', () => {
+        initializeApp();
+        
+        // Gắn hàm xử lý tìm kiếm vào sự kiện 'input' của ô nhập liệu
+        const searchInput = document.getElementById('universal-search');
+        if (searchInput) {
+            searchInput.addEventListener('input', handleSearch);
+        }
+    });
+
+</script>
+</body>
+</html>
