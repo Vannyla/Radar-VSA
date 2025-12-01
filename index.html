@@ -7,8 +7,6 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
     <style>
         :root {
             --primary-bg: #f3f4f6;
@@ -67,6 +65,7 @@
         }
         .metric-card.bullish { border-left-color: var(--up-color); }
         .metric-card.bearish { border-left-color: var(--down-color); }
+        .metric-card.neutral { border-left-color: var(--neutral-color); }
 
         .stat-value {
             font-size: 1.75rem;
@@ -75,16 +74,9 @@
             letter-spacing: -1px;
         }
 
-        /* --- Chart Section --- */
-        .chart-container {
-            position: relative;
-            height: 350px; /* Tăng chiều cao một chút để hiển thị rõ cột */
-            width: 100%;
-        }
-
         /* --- Table Styling --- */
         .table-container {
-            max-height: 800px;
+            max-height: 800px; 
             overflow-y: auto;
         }
         
@@ -130,6 +122,24 @@
             margin-bottom: 4px;
             display: block;
         }
+        
+        /* New Style for Industry Analysis Section */
+        .industry-analysis-content {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            border-left: 4px solid var(--theme-purple);
+        }
+        .industry-item {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px dashed #e0e0e0;
+        }
+        .industry-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
 
         /* --- Utilities --- */
         .text-purple { color: var(--theme-purple) !important; }
@@ -171,12 +181,12 @@
                 <div>
                     <h4 class="mb-0 brand-text"><i class="fas fa-chart-line me-2"></i>MARKET INTELLIGENCE</h4>
                     <div class="text-secondary fw-bold mt-1" style="font-size: 0.9rem;">
-                        <i class="far fa-calendar-alt me-1"></i> Dữ liệu lọc cuối phiên 28/11/2025
+                        <i class="far fa-calendar-alt me-1"></i> Dữ liệu đóng cửa: 01/12/2025
                     </div>
                 </div>
                 <div class="d-flex gap-2">
-                    <span class="badge bg-purple rounded-pill px-3 py-2">VSA Signals</span>
-                    <span class="badge bg-dark rounded-pill px-3 py-2"> Filter</span>
+                    <span class="badge bg-purple rounded-pill px-3 py-2">Daily Report</span>
+                    <span class="badge bg-dark rounded-pill px-3 py-2">VSA Analysis</span>
                 </div>
             </div>
         </div>
@@ -190,46 +200,49 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <p class="text-muted mb-1 text-uppercase fw-bold" style="font-size: 0.75rem;">VN-INDEX</p>
-                            <div class="stat-value">1,690.99</div>
+                            <div class="stat-value">1,701.67</div>
                             <div class="mt-2 text-success fw-bold small">
-                                <i class="fas fa-arrow-up"></i> +0.40%
+                                <i class="fas fa-arrow-up"></i> +10.68 điểm
                             </div>
                         </div>
                         <div class="text-end">
-                            <div class="badge badge-up-light p-2 mb-2"><i class="fas fa-chart-bar"></i> Vol Thấp</div>
-                            <div style="font-size: 0.8rem;">Xu hướng: <span class="text-up fw-bold">TĂNG</span></div>
+                            <div class="badge badge-up-light p-2 mb-2"><i class="fas fa-chart-line"></i> Xu Hướng Tăng</div>
+                            <div style="font-size: 0.8rem;">Đóng cửa: <span class="text-neutral fw-bold">Nửa dưới</span></div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card metric-card bearish p-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <p class="text-muted mb-1 text-uppercase fw-bold" style="font-size: 0.75rem;">TÍN HIỆU MUA</p>
-                            <div class="stat-value text-success">4 / 32</div>
-                            <div class="mt-2 text-muted small">
-                                Mã khuyến nghị Mua Ngay / Tổng Lọc
-                            </div>
-                        </div>
-                        <div class="text-end">
-                            <div class="badge bg-success text-white p-2 mb-2">Tích cực</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            
             <div class="col-md-4">
                 <div class="card metric-card bullish p-3">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <p class="text-muted mb-1 text-uppercase fw-bold" style="font-size: 0.75rem;">THANH KHOẢN</p>
-                            <div class="stat-value text-secondary">627 M</div>
+                            <p class="text-muted mb-1 text-uppercase fw-bold" style="font-size: 0.75rem;">RSI (14)</p>
+                            <div class="stat-value text-purple">60.97</div>
                             <div class="mt-2 text-muted small">
-                                Thấp hơn TB 20 phiên
+                                Bullish Zone (Tích cực)
                             </div>
                         </div>
                         <div class="text-end">
-                            <div class="badge bg-warning text-dark p-2 mb-2">Tiết Cung</div>
+                            <div class="badge bg-success text-white p-2 mb-2">Dư địa tăng</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card metric-card neutral p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1 text-uppercase fw-bold" style="font-size: 0.75rem;">THANH KHOẢN</p>
+                            <div class="stat-value text-secondary">519.8 M</div>
+                            <div class="mt-2 text-danger small fw-bold">
+                                <i class="fas fa-arrow-down"></i> Thấp hơn TB 20 phiên
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <div class="badge bg-warning text-dark p-2 mb-2">Weak Effort</div>
+                            <div style="font-size: 0.8rem;">TB20: 671.4 M</div>
                         </div>
                     </div>
                 </div>
@@ -241,26 +254,45 @@
                 
                 <div class="card mb-4">
                     <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                        <h6 class="mb-0 fw-bold text-purple"><i class="fas fa-sort-amount-down-alt me-2"></i>Top Cổ Phiếu Tác Động (Top Movers VN30)</h6>
-                        <span class="badge bg-light text-dark border">Dữ liệu phiên 28/11</span>
+                        <h6 class="mb-0 fw-bold text-purple"><i class="fas fa-layer-group me-2"></i>PHÂN TÍCH NHÓM NGÀNH DẪN DẮT</h6>
+                        <span class="badge bg-light text-dark border">Cập nhật: 01/12</span>
                     </div>
                     <div class="card-body">
-                        <div class="chart-container">
-                            <canvas id="marketChart"></canvas>
-                        </div>
-                        <div class="mt-2 text-center text-muted small fst-italic">
-                            * Di chuột vào cột để xem chi tiết % Tăng/Giảm và % Tác động
+                        <div class="industry-analysis-content">
+                            <div class="industry-item">
+                                <h6 class="fw-bold text-success"><i class="fas fa-utensils me-2"></i>Dịch vụ tiêu dùng (+1.55%)</h6>
+                                <p class="mb-1 small">
+                                    Chỉ số RSI đạt <b>74.6</b> (vùng Quá mua), cho thấy sức mạnh dòng tiền đang tập trung rất mạnh tại đây. 
+                                    Các mã đầu ngành tiếp tục phá đỉnh.
+                                </p>
+                                <span class="badge bg-success bg-opacity-10 text-success border border-success">Trạng thái: Tăng mạnh / Nắm giữ</span>
+                            </div>
+
+                            <div class="industry-item">
+                                <h6 class="fw-bold text-primary"><i class="fas fa-shopping-cart me-2"></i>Hàng tiêu dùng (+1.05%)</h6>
+                                <p class="mb-1 small">
+                                    Duy trì đà tăng trưởng bền vững bất chấp thị trường rung lắc. Đây đang là "hầm trú ẩn" an toàn cho dòng tiền lớn.
+                                </p>
+                                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary">Trạng thái: Tích cực / An toàn</span>
+                            </div>
+
+                            <div class="industry-item">
+                                <h6 class="fw-bold text-secondary"><i class="fas fa-info-circle me-2"></i>Nhận định chung</h6>
+                                <p class="mb-0 small fst-italic text-muted">
+                                    Dòng tiền đang có xu hướng dịch chuyển sang các nhóm ngành mang tính phòng thủ và tiêu dùng thiết yếu. 
+                                    Nhà đầu tư nên ưu tiên nắm giữ cổ phiếu thuộc các nhóm này thay vì mua đuổi các nhóm đã tăng nóng.
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
-
                 <div class="card">
                     <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
                         <div class="d-flex align-items-center">
                             <i class="fas fa-filter text-purple me-2"></i>
-                            <h6 class="mb-0 fw-bold text-dark">Bộ Lọc Tín Hiệu VSA Cuối Phiên</h6>
+                            <h6 class="mb-0 fw-bold text-dark">Bộ Lọc Tín Hiệu Cuối Phiên (Watchlist)</h6>
                         </div>
-                        <span class="badge bg-secondary">32 Mã Cổ Phiếu</span>
+                        <span class="badge bg-secondary">01/12/2025</span>
                     </div>
                     <div class="card-body p-0">
                         <div class="table-responsive table-container">
@@ -308,7 +340,7 @@
                                         <td class="text-end text-up fw-bold">+1.34%</td>
                                         <td class="text-end">228.49%</td>
                                     </tr>
-
+                                    
                                     <tr>
                                         <td class="fw-bold text-purple">BMP</td>
                                         <td><span class="badge badge-neutral-light border border-warning text-dark">THEO DOI</span></td>
@@ -333,208 +365,6 @@
                                         <td class="text-end text-up fw-bold">+1.00%</td>
                                         <td class="text-end">57.91%</td>
                                     </tr>
-                                    <tr>
-                                        <td class="fw-bold text-purple">NLG</td>
-                                        <td><span class="badge badge-neutral-light border border-warning text-dark">THEO DOI</span></td>
-                                        <td class="text-success fw-bold">MUA SOM (TEST CUNG)</td>
-                                        <td class="text-end">35.95</td>
-                                        <td class="text-end text-up fw-bold">+0.70%</td>
-                                        <td class="text-end">52.62%</td>
-                                    </tr>
-
-                                    <tr>
-                                        <td class="fw-bold text-purple">ANV</td>
-                                        <td><span class="badge badge-neutral-light border border-warning text-dark">THEO DOI</span></td>
-                                        <td class="text-danger fw-bold">QUAN SAT (KHONG BAN)</td>
-                                        <td class="text-end">29.25</td>
-                                        <td class="text-end text-down fw-bold">-0.17%</td>
-                                        <td class="text-end">54.73%</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="fw-bold text-purple">BID</td>
-                                        <td><span class="badge badge-neutral-light border border-warning text-dark">THEO DOI</span></td>
-                                        <td class="text-danger fw-bold">QUAN SAT (KHONG BAN)</td>
-                                        <td class="text-end">37.1</td>
-                                        <td class="text-end text-down fw-bold">-1.20%</td>
-                                        <td class="text-end">44.60%</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="fw-bold text-purple">BVH</td>
-                                        <td><span class="badge badge-neutral-light border border-warning text-dark">THEO DOI</span></td>
-                                        <td class="text-danger fw-bold">QUAN SAT (KHONG BAN)</td>
-                                        <td class="text-end">52.1</td>
-                                        <td class="text-end text-down fw-bold">-1.51%</td>
-                                        <td class="text-end">33.29%</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="fw-bold text-purple">CMG</td>
-                                        <td><span class="badge badge-neutral-light border border-warning text-dark">THEO DOI</span></td>
-                                        <td class="text-danger fw-bold">QUAN SAT (KHONG BAN)</td>
-                                        <td class="text-end">37.4</td>
-                                        <td class="text-end text-down fw-bold">-0.40%</td>
-                                        <td class="text-end">42.44%</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="fw-bold text-purple">CTR</td>
-                                        <td><span class="badge badge-neutral-light border border-warning text-dark">THEO DOI</span></td>
-                                        <td class="text-danger fw-bold">QUAN SAT (KHONG BAN)</td>
-                                        <td class="text-end">86.4</td>
-                                        <td class="text-end text-down fw-bold">-1.59%</td>
-                                        <td class="text-end">39.05%</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="fw-bold text-purple">DCM</td>
-                                        <td><span class="badge badge-neutral-light border border-warning text-dark">THEO DOI</span></td>
-                                        <td class="text-danger fw-bold">QUAN SAT (KHONG BAN)</td>
-                                        <td class="text-end">33.9</td>
-                                        <td class="text-end text-down fw-bold">-0.15%</td>
-                                        <td class="text-end">38.65%</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="fw-bold text-purple">DGC</td>
-                                        <td><span class="badge badge-neutral-light border border-warning text-dark">THEO DOI</span></td>
-                                        <td class="text-danger fw-bold">QUAN SAT (KHONG BAN)</td>
-                                        <td class="text-end">94.3</td>
-                                        <td class="text-end text-down fw-bold">-0.74%</td>
-                                        <td class="text-end">43.10%</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="fw-bold text-purple">DPM</td>
-                                        <td><span class="badge badge-neutral-light border border-warning text-dark">THEO DOI</span></td>
-                                        <td class="text-danger fw-bold">QUAN SAT (KHONG BAN)</td>
-                                        <td class="text-end">23.1</td>
-                                        <td class="text-end text-down fw-bold">-0.86%</td>
-                                        <td class="text-end">59.80%</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="fw-bold text-purple">FTS</td>
-                                        <td><span class="badge badge-neutral-light border border-warning text-dark">THEO DOI</span></td>
-                                        <td class="text-danger fw-bold">QUAN SAT (KHONG BAN)</td>
-                                        <td class="text-end">32.4</td>
-                                        <td class="text-end text-down fw-bold">-1.07%</td>
-                                        <td class="text-end">59.55%</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="fw-bold text-purple">HCM</td>
-                                        <td><span class="badge badge-neutral-light border border-warning text-dark">THEO DOI</span></td>
-                                        <td class="text-danger fw-bold">QUAN SAT (KHONG BAN)</td>
-                                        <td class="text-end">22.15</td>
-                                        <td class="text-end text-down fw-bold">-1.34%</td>
-                                        <td class="text-end">55.16%</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="fw-bold text-purple">HDC</td>
-                                        <td><span class="badge badge-neutral-light border border-warning text-dark">THEO DOI</span></td>
-                                        <td class="text-danger fw-bold">QUAN SAT (KHONG BAN)</td>
-                                        <td class="text-end">27.25</td>
-                                        <td class="text-end text-down fw-bold">-0.37%</td>
-                                        <td class="text-end">37.98%</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="fw-bold text-purple">HSG</td>
-                                        <td><span class="badge badge-neutral-light border border-warning text-dark">THEO DOI</span></td>
-                                        <td class="text-danger fw-bold">QUAN SAT (KHONG BAN)</td>
-                                        <td class="text-end">16.7</td>
-                                        <td class="text-end text-down fw-bold">-0.89%</td>
-                                        <td class="text-end">52.47%</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="fw-bold text-purple">MWG</td>
-                                        <td><span class="badge badge-neutral-light border border-warning text-dark">THEO DOI</span></td>
-                                        <td class="text-danger fw-bold">QUAN SAT (KHONG BAN)</td>
-                                        <td class="text-end">79.9</td>
-                                        <td class="text-end text-down fw-bold">-0.12%</td>
-                                        <td class="text-end">54.20%</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="fw-bold text-purple">NKG</td>
-                                        <td><span class="badge badge-neutral-light border border-warning text-dark">THEO DOI</span></td>
-                                        <td class="text-danger fw-bold">QUAN SAT (KHONG BAN)</td>
-                                        <td class="text-end">16.2</td>
-                                        <td class="text-end text-down fw-bold">-0.92%</td>
-                                        <td class="text-end">44.91%</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="fw-bold text-purple">PC1</td>
-                                        <td><span class="badge badge-neutral-light border border-warning text-dark">THEO DOI</span></td>
-                                        <td class="text-danger fw-bold">QUAN SAT (KHONG BAN)</td>
-                                        <td class="text-end">21.7</td>
-                                        <td class="text-end text-down fw-bold">-1.36%</td>
-                                        <td class="text-end">47.10%</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="fw-bold text-purple">PLX</td>
-                                        <td><span class="badge badge-neutral-light border border-warning text-dark">THEO DOI</span></td>
-                                        <td class="text-danger fw-bold">QUAN SAT (KHONG BAN)</td>
-                                        <td class="text-end">33.9</td>
-                                        <td class="text-end text-down fw-bold">-0.29%</td>
-                                        <td class="text-end">52.93%</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="fw-bold text-purple">REE</td>
-                                        <td><span class="badge badge-neutral-light border border-warning text-dark">THEO DOI</span></td>
-                                        <td class="text-danger fw-bold">QUAN SAT (KHONG BAN)</td>
-                                        <td class="text-end">65.2</td>
-                                        <td class="text-end text-down fw-bold">-1.21%</td>
-                                        <td class="text-end">36.21%</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="fw-bold text-purple">STB</td>
-                                        <td><span class="badge badge-neutral-light border border-warning text-dark">THEO DOI</span></td>
-                                        <td class="text-danger fw-bold">QUAN SAT (KHONG BAN)</td>
-                                        <td class="text-end">48.6</td>
-                                        <td class="text-end text-down fw-bold">-1.42%</td>
-                                        <td class="text-end">52.16%</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="fw-bold text-purple">TPB</td>
-                                        <td><span class="badge badge-neutral-light border border-warning text-dark">THEO DOI</span></td>
-                                        <td class="text-danger fw-bold">QUAN SAT (KHONG BAN)</td>
-                                        <td class="text-end">17.3</td>
-                                        <td class="text-end text-down fw-bold">-0.29%</td>
-                                        <td class="text-end">51.86%</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="fw-bold text-purple">VCI</td>
-                                        <td><span class="badge badge-neutral-light border border-warning text-dark">THEO DOI</span></td>
-                                        <td class="text-danger fw-bold">QUAN SAT (KHONG BAN)</td>
-                                        <td class="text-end">33.75</td>
-                                        <td class="text-end text-down fw-bold">-0.30%</td>
-                                        <td class="text-end">58.46%</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="fw-bold text-purple">VGC</td>
-                                        <td><span class="badge badge-neutral-light border border-warning text-dark">THEO DOI</span></td>
-                                        <td class="text-danger fw-bold">QUAN SAT (KHONG BAN)</td>
-                                        <td class="text-end">44.0</td>
-                                        <td class="text-end text-down fw-bold">-1.79%</td>
-                                        <td class="text-end">58.06%</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="fw-bold text-purple">VIB</td>
-                                        <td><span class="badge badge-neutral-light border border-warning text-dark">THEO DOI</span></td>
-                                        <td class="text-danger fw-bold">QUAN SAT (KHONG BAN)</td>
-                                        <td class="text-end">18.5</td>
-                                        <td class="text-end text-down fw-bold">-0.80%</td>
-                                        <td class="text-end">56.72%</td>
-                                    </tr>
-                                    
-                                    <tr>
-                                        <td class="fw-bold text-purple">BSR</td>
-                                        <td><span class="badge badge-neutral-light border border-warning text-dark">THEO DOI</span></td>
-                                        <td class="text-warning fw-bold">VAO WATCHLIST</td>
-                                        <td class="text-end">15.5</td>
-                                        <td class="text-end text-neutral fw-bold">0.00%</td>
-                                        <td class="text-end">57.29%</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="fw-bold text-purple">SAB</td>
-                                        <td><span class="badge badge-neutral-light border border-warning text-dark">THEO DOI</span></td>
-                                        <td class="text-warning fw-bold">VAO WATCHLIST</td>
-                                        <td class="text-end">46.4</td>
-                                        <td class="text-end text-neutral fw-bold">0.00%</td>
-                                        <td class="text-end">54.92%</td>
-                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -546,16 +376,13 @@
                 
                 <div class="card mb-4">
                     <div class="card-header bg-white py-3 border-bottom-0">
-                         <h6 class="mb-0 fw-bold text-purple"><i class="fas fa-microscope me-2"></i>GÓC NHÌN KỸ THUẬT (28/11)</h6>
+                         <h6 class="mb-0 fw-bold text-purple"><i class="fas fa-microscope me-2"></i>GÓC NHÌN KỸ THUẬT (01/12)</h6>
                     </div>
                     <div class="card-body pt-0">
                         <div class="mb-3">
                             <span class="analysis-label">1. VSA & Price Action</span>
                             <p class="analysis-text mb-2">
-                                VNINDEX đóng cửa <b>1,690.99</b> (tăng điểm), tạo nến xanh với giá đóng cửa cao nhất ngày. Khối lượng 627M (thấp hơn TB20 phiên 693M) cho thấy trạng thái <span class="badge bg-warning text-dark">No Supply</span> (Thiếu cung) hơn là cầu mạnh. 
-                            </p>
-                            <p class="analysis-text text-muted fst-italic mb-0">
-                                <i class="fas fa-info-circle me-1"></i> Cần Vol tăng trong các phiên tới khi tiệm cận 1700 để xác nhận xu hướng bền vững.
+                                VN-INDEX đóng cửa <b>1,701.67</b> (+10.68 điểm). Tuy nhiên nến có bóng trên dài (Long Upper Shadow) thể hiện áp lực cung quyết liệt tại 1,713. Khối lượng chỉ <b>519.8 M</b> (thấp hơn TB20), đây là tín hiệu <span class="badge bg-warning text-dark">Nỗ lực yếu</span>.
                             </p>
                         </div>
                         
@@ -564,15 +391,15 @@
                             <div class="bg-light p-2 rounded border">
                                 <div class="d-flex justify-content-between mb-1">
                                     <span class="small">Xu hướng:</span>
-                                    <span class="small fw-bold text-success">Tăng ngắn hạn (Higher Lows)</span>
+                                    <span class="small fw-bold text-success">Tăng (Đáy sau cao hơn)</span>
                                 </div>
                                 <div class="d-flex justify-content-between mb-1">
-                                    <span class="small">RSI (14):</span>
-                                    <span class="small fw-bold text-success">58.65 (Bullish Zone)</span>
+                                    <span class="small">RSI (14) / MACD:</span>
+                                    <span class="small fw-bold text-success">60.97 / Histogram Dương</span>
                                 </div>
                                 <div class="d-flex justify-content-between">
                                     <span class="small">Hỗ trợ / Kháng cự:</span>
-                                    <span class="small fw-bold">1680 / 1700</span>
+                                    <span class="small fw-bold">1,690 / 1,715</span>
                                 </div>
                             </div>
                         </div>
@@ -582,22 +409,22 @@
                             
                             <div class="mb-2">
                                 <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <span class="badge bg-success small">Tích Cực (65%)</span>
+                                    <span class="badge bg-success small">Tích Cực (40%)</span>
                                 </div>
                                 <div class="progress" style="height: 6px;">
-                                    <div class="progress-bar bg-success" role="progressbar" style="width: 65%"></div>
+                                    <div class="progress-bar bg-success" role="progressbar" style="width: 40%"></div>
                                 </div>
-                                <p class="small text-muted mt-1 mb-2">Vượt 1700 với Vol > 700M ("Smart Money"). <b>Hành động:</b> Gia tăng tỷ trọng cổ phiếu dẫn dắt.</p>
+                                <p class="small text-muted mt-1 mb-2">Bùng nổ vượt 1,715 với Vol > 650M. Phủ định nến rút chân hôm nay.</p>
                             </div>
 
                             <div>
                                 <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <span class="badge bg-danger small">Tiêu Cực (35%)</span>
+                                    <span class="badge bg-secondary small">Thận Trọng/Tiêu Cực (60%)</span>
                                 </div>
                                 <div class="progress" style="height: 6px;">
-                                    <div class="progress-bar bg-danger" role="progressbar" style="width: 35%"></div>
+                                    <div class="progress-bar bg-secondary" role="progressbar" style="width: 60%"></div>
                                 </div>
-                                <p class="small text-muted mt-1 mb-0">Thủng 1680 Vol lớn (Bull Trap). <b>Hành động:</b> Chốt lời, quan sát tại 1660.</p>
+                                <p class="small text-muted mt-1 mb-0">Điều chỉnh kiểm định lại <b>1,690</b>. Nếu thủng với Vol lớn, xu hướng chuyển xấu.</p>
                             </div>
                         </div>
                     </div>
@@ -605,29 +432,29 @@
 
                 <div class="card recommendation-card">
                     <div class="card-body">
-                        <h5 class="card-title fw-bold"><i class="fas fa-lightbulb me-2"></i>KHUYẾN NGHỊ HÀNH ĐỘNG</h5>
-                        <p class="small text-white-50 mb-3">Chiến lược: Đánh theo tín hiệu VSA</p>
+                        <h5 class="card-title fw-bold"><i class="fas fa-lightbulb me-2"></i>KHUYẾN NGHỊ & NGÀNH</h5>
+                        <p class="small text-white-50 mb-3">Chiến lược: Phòng thủ & Tiêu dùng</p>
                         <hr>
                         
                         <div class="mb-4">
                             <div class="d-flex align-items-center mb-1">
-                                <span class="badge bg-white text-success fw-bold me-2">MUA MỚI (BUY)</span>
+                                <span class="badge bg-white text-success fw-bold me-2">DẪN DẮT (LEADING)</span>
                             </div>
                             <p class="small mb-0 text-white-50">
-                                <strong>VNM, PVT:</strong> Tăng mạnh kèm Vol lớn (trên 200% TB20). Ưu tiên gia tăng tỷ trọng.
+                                <strong>Dịch vụ tiêu dùng (+1.55%):</strong> RSI 74.6 (Quá mua). Sức mạnh dòng tiền rất mạnh. Tiếp tục nắm giữ.
                                 <br>
-                                <strong>GAS, MSB:</strong> Mua thăm dò 30% vị thế tại nền giá hiện tại.
+                                <strong>Hàng tiêu dùng (+1.05%):</strong> Tăng trưởng bền vững. Hầm trú ẩn an toàn.
                             </p>
                         </div>
 
                         <div class="mb-4">
                             <div class="d-flex align-items-center mb-1">
-                                <span class="badge bg-white text-warning fw-bold me-2">THEO DÕI (WATCH)</span>
+                                <span class="badge bg-white text-warning fw-bold me-2">HÀNH ĐỘNG</span>
                             </div>
                             <p class="small mb-0 text-white-50">
-                                <strong>BMP, DXG, HAH, NLG:</strong> Tín hiệu Test Cung (Cạn cung). Chờ xác nhận dòng tiền để mở mua.
-                                <br>
-                                <strong>BSR, SAB:</strong> Đưa vào Watchlist quan sát thêm.
+                                - <strong>Không mua đuổi</strong> tại vùng giá xanh. <br>
+                                - Canh chốt lời từng phần các mã đã đạt mục tiêu.<br>
+                                - Ưu tiên dịch chuyển danh mục sang Bán lẻ, Thực phẩm, Điện nước.
                             </p>
                         </div>
                     </div>
@@ -636,94 +463,10 @@
         </div>
         
         <footer class="mt-4 pb-4 text-center text-muted small">
-            <p>&copy; 2025 Market Intelligence Report. Powered by Chart.js & VSA Filter.</p>
+            <p>&copy; 2025 Market Intelligence Report. Powered by VSA Filter.</p>
         </footer>
     </div>
 
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            const ctx = document.getElementById('marketChart').getContext('2d');
-            
-            // Dữ liệu Top Movers trích xuất từ file CSV "data vn30 28.11.csv"
-            // VIC (+5.0%), VNM (+3.23%), VRE (+1.78%), VJC (+0.74%), GAS (+0.63%)
-            // FPT (-2.41%), GVR (-2.15%), STB (-1.42%), LPB (-1.42%), MSN (-1.40%)
-            
-            // Cấu trúc dữ liệu mở rộng bao gồm cả giá trị 'impact' (giả định)
-            const chartData = [
-                { ticker: 'VIC', change: 5.00, impact: 1.50 }, // Impact là số giả định
-                { ticker: 'VNM', change: 3.23, impact: 1.25 },
-                { ticker: 'VRE', change: 1.78, impact: 0.45 },
-                { ticker: 'VJC', change: 0.74, impact: 0.15 },
-                { ticker: 'GAS', change: 0.63, impact: 0.35 },
-                { ticker: 'MSN', change: -1.40, impact: -0.42 },
-                { ticker: 'LPB', change: -1.42, impact: -0.28 },
-                { ticker: 'STB', change: -1.42, impact: -0.36 },
-                { ticker: 'GVR', change: -2.15, impact: -0.65 },
-                { ticker: 'FPT', change: -2.41, impact: -1.15 }
-            ];
-
-            new Chart(ctx, {
-                type: 'bar',
-                // Bỏ indexAxis: 'y' để biểu đồ quay về mặc định là cột đứng (trục X là mã)
-                data: {
-                    labels: chartData.map(item => item.ticker), 
-                    datasets: [{
-                        label: '% Tăng/Giảm Giá',
-                        data: chartData.map(item => ({
-                            x: item.ticker, 
-                            y: item.change,
-                            impact: item.impact // Lưu trữ giá trị impact để dùng trong tooltip
-                        })), 
-                        backgroundColor: (context) => {
-                            const value = context.raw.y;
-                            return value > 0 ? '#00c853' : '#d32f2f'; // Xanh nếu > 0, Đỏ nếu < 0
-                        },
-                        borderRadius: 4,
-                        barThickness: 25 // Độ rộng cột
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            displayColors: false,
-                            callbacks: {
-                                // Tùy chỉnh nội dung hiển thị trong Tooltip
-                                label: function(context) {
-                                    const raw = context.raw;
-                                    const changeVal = raw.y;
-                                    const impactVal = raw.impact;
-                                    
-                                    const prefixChange = changeVal > 0 ? '+' : '';
-                                    const prefixImpact = impactVal > 0 ? '+' : '';
-
-                                    return [
-                                        `% Tăng/Giảm: ${prefixChange}${changeVal}%`,
-                                        `% Tác động Index: ${prefixImpact}${impactVal} điểm (Ước tính)`
-                                    ];
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: { 
-                            grid: { color: '#f1f5f9' },
-                            ticks: { 
-                                callback: function(value) { return value + '%'; },
-                                font: { weight: 'bold', size: 10 }
-                            } 
-                        },
-                        x: { 
-                            grid: { display: false }, 
-                            ticks: { font: { weight: 'bold', size: 11 } } 
-                        }
-                    }
-                }
-            });
-        });
-    </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
